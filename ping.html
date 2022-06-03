@@ -79,7 +79,6 @@
         const latencyElement = document.getElementById("latency");
         const versionElement = document.getElementById("version");
         const motdElement = document.getElementById("motd");
-        // const  = document.getElementById("");
         let address = document.getElementById('address').value;
         statusElement.innerText = "Pinging...";
         let response = await fetch("/api/" + address, {})
@@ -99,7 +98,6 @@
         playersElement.innerText = "Players: " + response['players']['online'] + "/" + response['players']['maximum'];
         motdElement.innerText = response['motd'];
         versionElement.innerText = response['version']['broadcast'];
-        console.log(response);
     }
 </script>
 

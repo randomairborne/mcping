@@ -1,4 +1,4 @@
-module github.com/randomairborne/mcpingme
+module github.com/randomairborne/mcping
 
 go 1.18
 
