@@ -1,17 +1,13 @@
 package main
 
 import (
-	"bytes"
-	"encoding/base64"
 	"encoding/json"
-	"image/png"
 	"log"
 	"math"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
-	"fmt"
 
 	"github.com/iverly/go-mcping/mcping"
 )
@@ -67,7 +63,6 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/", &RootHandler{staticpage})
 	mux.Handle("/api/", &ApiHandler{})
-	mux.Handle("/img/", &IconHandler{})
 	log.Println("Listening on port 8080")
 	err = http.ListenAndServe(":8080", mux)
 	if err != nil {
@@ -138,58 +133,6 @@ func (h *ApiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write(response)
-}
-
-func (h *IconHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "image/png")
-	path := strings.Split(r.URL.Path, "/")
-	address := path[len(path)-1]
-	connectionSlice := strings.Split(address, ":")
-	port := 25565
-	ip := connectionSlice[0]
-	if len(connectionSlice) == 2 {
-		fmt.Printf("%#v", connectionSlice)
-		port, err := strconv.Atoi(connectionSlice[1])
-		if err != nil {
-			failure(w, "Port value is not a number!")
-			return
-		}
-		if port > math.MaxUint16 {
-			failure(w, "Port integer is not a valid port!")
-			return
-		}
-	} else if len(connectionSlice) > 2 {
-		failure(w, "Invalid Server Address!")
-		return
-	}
-	pinger := mcping.NewPinger()
-	result, err := pinger.Ping(ip, uint16(port))
-	if err != nil {
-		failure(w, "Failed to connect to server: "+err.Error())
-		return
-	}
-	if result.Favicon == "" {
-		failure(w, "Server has no icon.")
-		return
-	}
-	if !strings.HasPrefix(result.Favicon, "data:image/png;base64,") {
-		failure(w, "Favicon was not base64!")
-		return
-	}
-	favicon := strings.TrimPrefix(result.Favicon, "data:image/png;base64,")
-	image, err := png.Decode(base64.NewDecoder(base64.StdEncoding, bytes.NewReader([]byte(favicon))))
-	if err != nil {
-		failure(w, "Failed to decode PNG: "+err.Error())
-		return
-	}
-	buf := new(bytes.Buffer)
-	err = png.Encode(buf, image)
-	if err != nil {
-		failure(w, "Failed to encode PNG: "+err.Error())
-		return
-	}
-	data := buf.Bytes()
-	w.Write(data)
 }
 
 func failure(w http.ResponseWriter, e string) {
