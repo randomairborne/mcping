@@ -1,0 +1,4 @@
+github.com/iverly/go-mcping v1.0.0 h1:zr/6Ko0D2101YslDoEiUg0N2hQP6iLalGQlnfErBlbY=
+github.com/iverly/go-mcping v1.0.0/go.mod h1:OTdb13yxI0zg1VKs7G53T43N2hAduaPeUcY+PbP608g=
+github.com/jmoiron/jsonq v0.0.0-20150511023944-e874b168d07e h1:ZZCvgaRDZg1gC9/1xrsgaJzQUCQgniKtw0xjWywWAOE=
+github.com/jmoiron/jsonq v0.0.0-20150511023944-e874b168d07e/go.mod h1:+rHyWac2R9oAZwFe1wGY2HBzFJJy++RHBg1cU23NkD8=

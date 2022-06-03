@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Minecraft server tester</title>
+    <link href="https://fonts.googleapis.com/css?family=JetBrains+Mono&display=swap" rel="preload" as="style" />
+    <link href="https://fonts.googleapis.com/css?family=JetBrains+Mono&display=swap" rel="stylesheet" />
+    <style>
+        body {
+            text-align: center;
+            background: hsl(200, 4%, 10%);
+            color: #43baf4;
+            font-family: "JetBrains Mono", monospace;
+        }
+
+        input {
+            background: hsl(192, 2%, 40%);
+            border: #1b8b77;
+            color: #ffffff;
+            padding: 20px;
+            border-radius: 3px;
+        }
+
+        input::placeholder {
+            color: hsl(192, 2%, 70%);
+        }
+
+        a {
+            color: #43baf4;
+        }
+
+        button {
+            border: none;
+            border-radius: 5px;
+            padding: 15px;
+            color: white;
+            cursor: pointer;
+            display: inline-block;
+            background-color: #43baf4;
+            text-align: center;
+            text-decoration: none;
+        }
+        .response {
+            font-size: 20pt;
+        }
+    </style>
+</head>
+<body>
+    <noscript>
+        <h1>This website unfortunately requires JavaScript.</h1>
+    </noscript>
+    <h1>Minecraft server tester</h1>
+    <div id="select">
+        <input id="address" placeholder="Server address" />
+        <br>
+        <br>
+        <button id="ping" onclick="doPing()">Ping</button>
+        <br>
+        <br>
+        <div id="status"></div>
+    </div>
+    <div class="response" id="response" style="display: none;">
+        <img id="favicon" height="128" width="128"></img><br>
+        Server online!
+        <div id="latency"></div>
+        <div id="players"></div>
+        <div id="version"></div>
+        <br>
+        <div id="motd"></div>
+    </div>
+</body>
+<script>
+    async function doPing() {
+        const statusElement = document.getElementById("status");
+        const playersElement = document.getElementById("players");
+        const faviconElement = document.getElementById("favicon");
+        const latencyElement = document.getElementById("latency");
+        const versionElement = document.getElementById("version");
+        const motdElement = document.getElementById("motd");
+        // const  = document.getElementById("");
+        let address = document.getElementById('address').value;
+        statusElement.innerText = "Pinging...";
+        let response = await fetch("/api/" + address, {})
+            .then(response => response.json());
+        if (response['error'] !== undefined) {
+            statusElement.innerText = response['error'];
+            return;
+        }
+        document.getElementById('select').style.display = "none";
+        document.getElementById('response').style.display = null;
+        if (response['icon']['base64'] === "") {
+            faviconElement.style.display = "none";
+        } else {
+            faviconElement.src = response['icon']['base64'];
+        }
+        latencyElement.innerText = "Ping: " + response['latency'] + " milliseconds"
+        playersElement.innerText = "Players: " + response['players']['online'] + "/" + response['players']['maximum'];
+        motdElement.innerText = response['motd'];
+        versionElement.innerText = response['version']['broadcast'];
+        console.log(response);
+    }
+</script>
+
+</html>
