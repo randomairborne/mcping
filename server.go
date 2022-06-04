@@ -40,16 +40,11 @@ type Version struct {
 	Broadcast string `json:"broadcast"`
 }
 
-type Icon struct {
-	URL    string `json:"url"`
-	Base64 string `json:"base64"`
-}
-
 type ApiResponse struct {
 	Latency uint    `json:"latency"`
 	Players Players `json:"players"`
 	MOTD    string  `json:"motd"`
-	Icon    Icon    `json:"icon"`
+	Icon    string    `json:"icon"`
 	Version Version `json:"version"`
 }
 
@@ -106,10 +101,6 @@ func (h *ApiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Name: player.Name,
 		})
 	}
-	faviconUrl := ""
-	if result.Favicon != "" {
-		faviconUrl = "https://mcping.me/img/" + address
-	}
 	jsonResult := ApiResponse{
 		Latency: result.Latency,
 		MOTD:    result.Motd,
@@ -122,10 +113,7 @@ func (h *ApiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Online:  result.PlayerCount.Online,
 			Sample:  playerSamples,
 		},
-		Icon: Icon{
-			URL:    faviconUrl,
-			Base64: result.Favicon,
-		},
+		Icon: result.Favicon,
 	}
 	response, err := json.Marshal(jsonResult)
 	if err != nil {
