@@ -14,9 +14,10 @@ services:
         traefik.http.services.mcping.loadbalancer.server.port: 8080
         traefik.http.routers.mcping-http.rule: Host(`${HOST}`)
         traefik.http.routers.mcping-http.entrypoints: http
-        traefik.http.middlewares.https-redirect.redirectscheme.scheme: https
-        traefik.http.middlewares.https-redirect.redirectscheme.permanent: "true"
-        traefik.http.routers.mcping-http.middlewares: https-redirect
+        traefik.http.services.mcping-http.loadbalancer.server.port: 8080
+        traefik.http.middlewares.mcping-https-redirect.redirectscheme.scheme: https
+        traefik.http.middlewares.mcping-https-redirect.redirectscheme.permanent: "true"
+        traefik.http.routers.mcping-http.middlewares: mcping-https-redirect
 
 networks:
   proxy:
