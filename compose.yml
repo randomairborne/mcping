@@ -8,15 +8,15 @@ services:
     deploy:
       labels:
         traefik.enable: "true"
-        traefik.http.routers.dswrap.rule: Host(`${HOST}`)
-        traefik.http.routers.dswrap.entrypoints: https
-        traefik.http.routers.dswrap.tls.certresolver: letsencrypt
-        traefik.http.services.dswrap.loadbalancer.server.port: 8080
-        traefik.http.routers.dswrap-http.rule: Host(`${HOST}`)
-        traefik.http.routers.dswrap-http.entrypoints: http
+        traefik.http.routers.mcping.rule: Host(`${HOST}`)
+        traefik.http.routers.mcping.entrypoints: https
+        traefik.http.routers.mcping.tls.certresolver: letsencrypt
+        traefik.http.services.mcping.loadbalancer.server.port: 8080
+        traefik.http.routers.mcping-http.rule: Host(`${HOST}`)
+        traefik.http.routers.mcping-http.entrypoints: http
         traefik.http.middlewares.https-redirect.redirectscheme.scheme: https
         traefik.http.middlewares.https-redirect.redirectscheme.permanent: "true"
-        traefik.http.routers.dswrap-http.middlewares: https-redirect
+        traefik.http.routers.mcping-http.middlewares: https-redirect
 
 networks:
   proxy:
