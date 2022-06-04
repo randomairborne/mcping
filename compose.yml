@@ -1,6 +1,6 @@
 version: "3.7"
 services:
-  mcpingme:
+  mcping:
     image: ghcr.io/randomairborne/mcping
     restart: always
     networks:
