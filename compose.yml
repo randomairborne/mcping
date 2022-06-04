@@ -15,7 +15,7 @@ services:
         traefik.http.routers.dswrap-http.rule: Host(`${HOST}`)
         traefik.http.routers.dswrap-http.entrypoints: http
         traefik.http.middlewares.https-redirect.redirectscheme.scheme: https
-        traefik.http.middlewares.https-redirect.redirectscheme.permanent: true
+        traefik.http.middlewares.https-redirect.redirectscheme.permanent: "true"
         traefik.http.routers.dswrap-http.middlewares: https-redirect
 
 networks:
