@@ -48,7 +48,7 @@ type ApiResponse struct {
 	Version Version `json:"version"`
 }
 
-const jsonMarshalError = `{"error": "Error marshaling json! Please make a bug report: https://github.com/randomairborne/mcpingme/issues"}`
+const jsonMarshalError = `{"error": "Error marshaling json! Please make a bug report: https://github.com/randomairborne/mcping/issues"}`
 
 func main() {
 	staticpage, err := os.ReadFile("ping.html")

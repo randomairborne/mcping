@@ -94,7 +94,7 @@
         } else {
             faviconElement.src = response['icon'];
         }
-        latencyElement.innerText = "Ping: " + response['latency'] + " milliseconds"
+        latencyElement.innerText = "Ping (Toronto): " + response['latency'] + " milliseconds"
         playersElement.innerText = "Players: " + response['players']['online'] + "/" + response['players']['maximum'];
         motdElement.innerHTML = mineParse(response['motd']).raw;
         versionElement.innerText = response['version']['broadcast'];
