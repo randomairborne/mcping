@@ -12,6 +12,7 @@ WORKDIR /mcping
 
 COPY --from=builder /build/mcping /usr/bin/mcping
 COPY ./ping.html /mcping/
+COPY ./icon.png /mcping/
 
 EXPOSE 8080
 
