@@ -18,7 +18,9 @@ type RootHandler struct {
 
 type ApiHandler struct{}
 
-type IconHandler struct{}
+type IconHandler struct {
+	icon []byte
+}
 
 type ApiError struct {
 	Error string `json:"error"`
@@ -44,7 +46,7 @@ type ApiResponse struct {
 	Latency uint    `json:"latency"`
 	Players Players `json:"players"`
 	MOTD    string  `json:"motd"`
-	Icon    string    `json:"icon"`
+	Icon    string  `json:"icon"`
 	Version Version `json:"version"`
 }
 
@@ -54,10 +56,17 @@ func main() {
 	staticpage, err := os.ReadFile("ping.html")
 	if err != nil {
 		log.Fatal(err)
+		return
+	}
+	icon, err := os.ReadFile("icon.png")
+	if err != nil {
+		log.Fatal(err)
+		return
 	}
 	mux := http.NewServeMux()
 	mux.Handle("/", &RootHandler{staticpage})
 	mux.Handle("/api/", &ApiHandler{})
+	mux.Handle("/icon.png", &IconHandler{icon})
 	log.Println("Listening on port 8080")
 	err = http.ListenAndServe(":8080", mux)
 	if err != nil {
@@ -68,6 +77,11 @@ func main() {
 func (h *RootHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write(h.root)
+}
+
+func (h *IconHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "image/png")
+	w.Write(h.icon)
 }
 
 func (h *ApiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

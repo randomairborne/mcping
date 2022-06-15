@@ -5,6 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <title>Minecraft server tester</title>
+    <link rel="icon" type="image/png" href="/icon.png">
     <link href="https://fonts.googleapis.com/css?family=JetBrains+Mono&display=swap" rel="preload" as="style" />
     <link href="https://fonts.googleapis.com/css?family=JetBrains+Mono&display=swap" rel="stylesheet" />
     <style>
@@ -90,7 +91,7 @@
         document.getElementById('select').style.display = "none";
         document.getElementById('response').style.display = null;
         if (response['icon'] === "") {
-            faviconElement.style.display = "none";
+            faviconElement.src = "/icon.png"
         } else {
             faviconElement.src = response['icon'];
         }
