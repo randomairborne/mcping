@@ -16,6 +16,15 @@ services:
         traefik.http.routers.mcping.rule: Host(`${HOST}`) || Host(`www.${HOST}`)
         traefik.http.routers.mcping.tls.certresolver: letsencrypt
         traefik.http.services.mcping.loadbalancer.server.port: 8080
+  mctest:
+    image: ghcr.io/randomairborne/mctest
+    restart: always
+    networks:
+      - proxy
+    deploy:
+      labels:
+        traefik.enable: "true"
+        traefik.tcp.services.mctest.loadbalancer.server.port: 25565
 
 networks:
   proxy:
