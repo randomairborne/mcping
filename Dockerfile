@@ -1,18 +1,16 @@
 
-FROM golang:alpine AS builder
+FROM rust:alpine AS builder
 
 WORKDIR /build
 COPY . .
 
-RUN go build -o mcping
+RUN cargo build --release
 
 FROM alpine
 
-WORKDIR /mcping
+WORKDIR /
 
-COPY --from=builder /build/mcping /usr/bin/mcping
-COPY ./ping.html /mcping/
-COPY ./icon.png /mcping/
+COPY --from=builder /build/target/release/mcping /usr/bin/mcping
 
 EXPOSE 8080
 

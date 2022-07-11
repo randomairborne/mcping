@@ -43,6 +43,13 @@
             text-align: center;
             text-decoration: none;
         }
+        .java {
+            background-color: chartreuse;
+            color: black;
+        }
+        .bedrock {
+            background-color: black;
+        }
         .response {
             font-size: 20pt;
         }
@@ -57,7 +64,8 @@
         <input id="address" placeholder="Server address"/>
         <br>
         <br>
-        <button id="ping" onclick="doPing()">Ping</button>
+        <button id="ping" onclick="doPing('/api/java/')" class="java">Ping Java</button>
+        <button id="bedrock" onclick="doPing('/api/bedrock/')" class="bedrock">Ping Bedrock</button>
         <br>
         <br>
         <div id="status"></div>
@@ -70,20 +78,21 @@
         <div id="version"></div>
         <br>
         <div id="motd"></div>
+        <br>
         <button onclick="window.location.reload()">Ping Another</button>
     </div>
 </body>
 <script>
-    async function doPing() {
-        const statusElement = document.getElementById("status");
-        const playersElement = document.getElementById("players");
-        const faviconElement = document.getElementById("favicon");
-        const latencyElement = document.getElementById("latency");
-        const versionElement = document.getElementById("version");
-        const motdElement = document.getElementById("motd");
+    const statusElement = document.getElementById("status");
+    const playersElement = document.getElementById("players");
+    const faviconElement = document.getElementById("favicon");
+    const latencyElement = document.getElementById("latency");
+    const versionElement = document.getElementById("version");
+    const motdElement = document.getElementById("motd");
+    async function doPing(apiLocation) {
         let address = document.getElementById('address').value;
         statusElement.innerText = "Pinging...";
-        let response = await fetch("/api/" + address, {})
+        let response = await fetch(apiLocation + address, {})
             .then(response => response.json());
         if (response['error'] !== undefined) {
             statusElement.innerText = response['error'];
@@ -91,7 +100,7 @@
         }
         document.getElementById('select').style.display = "none";
         document.getElementById('response').style.display = null;
-        if (response['icon'] === "") {
+        if (response['icon'] === "" || response['icon'] === null) {
             faviconElement.src = "/icon.png"
         } else {
             faviconElement.src = response['icon'];
