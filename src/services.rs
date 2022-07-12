@@ -1,0 +1,174 @@
+use axum::response::IntoResponse;
+use reqwest::Response;
+use std::sync::Arc;
+use tokio::sync::RwLock;
+
+use crate::{
+    structures::{ServicesResponse, XblStatusResponse, MojangAuthServerStatus, MojangSessionServerStatus, MojangApiStatus, MinecraftApiStatus},
+    Failure,
+};
+
+const MOJANG_AUTHSERVER_URL: &str = "https://authserver.mojang.com/";
+const MOJANG_SESSIONSERVER_URL: &str =
+    "https://sessionserver.mojang.com/session/minecraft/profile/b5dcf182a943402bb75ba057a6508fed";
+const MOJANG_API_URL: &str = "https://api.mojang.com/users/profiles/minecraft/valkyrie_pilot";
+const MINECRAFT_SERVICES_API_URL: &str =
+    "https://api.minecraftservices.com/";
+const XBL_STATUS_URL: &str = "https://xnotify.xboxlive.com/servicestatusv6/US/en-US";
+
+#[allow(clippy::unused_async)]
+pub async fn handle_mcstatus(
+    resp: Arc<RwLock<ServicesResponse>>,
+) -> Result<impl IntoResponse, Failure> {
+    Ok((
+        [("Content-Type", "application/json")],
+        serde_json::to_string(&*resp.read().await)?,
+    ))
+}
+
+pub async fn get_mcstatus(http: reqwest::Client, resp: Arc<RwLock<ServicesResponse>>) {
+    let xbl = http
+        .get(XBL_STATUS_URL)
+        .header("Accept", "application/json")
+        .send()
+        .await;
+    let mojang_auth = http
+        .get(MOJANG_AUTHSERVER_URL)
+        .header("Accept", "application/json")
+        .send()
+        .await;
+    let mojang_session = http
+        .get(MOJANG_SESSIONSERVER_URL)
+        .header("Accept", "application/json")
+        .send()
+        .await;
+    let mojang_api = http
+        .get(MOJANG_API_URL)
+        .header("Accept", "application/json")
+        .send()
+        .await;
+    let minecraft_api = http
+        .get(MINECRAFT_SERVICES_API_URL)
+        .header("Accept", "application/json")
+        .send()
+        .await;
+    let xbox = match xbl {
+        Ok(r) => xbl_test(r).await,
+        Err(_) => Status::DefiniteProblems,
+    }
+    .to_string();
+    let mojang_auth = match mojang_auth {
+        Ok(r) => mojang_auth_test(r).await,
+        Err(_) => Status::DefiniteProblems,
+    }
+    .to_string();
+    let mojang_session = match mojang_session {
+        Ok(r) => mojang_session_test(r).await,
+        Err(_) => Status::DefiniteProblems,
+    }
+    .to_string();
+    let mojang_api = match mojang_api {
+        Ok(r) => mojang_api_test(r).await,
+        Err(_) => Status::DefiniteProblems,
+    }
+    .to_string();
+    let minecraft_api = match minecraft_api {
+        Ok(r) => minecraft_api_test(r).await,
+        Err(_) => Status::DefiniteProblems,
+    }
+    .to_string();
+    let mut response = resp.write().await;
+    *response = crate::structures::ServicesResponse {
+        xbox,
+        mojang_auth,
+        mojang_session,
+        mojang_api,
+        minecraft_api,
+    };
+}
+
+pub async fn refresh_mcstatus(http: reqwest::Client, resp: Arc<RwLock<ServicesResponse>>) {
+    tokio::time::sleep(std::time::Duration::from_secs(240)).await;
+    get_mcstatus(http, resp).await;
+}
+
+async fn xbl_test(res: Response) -> Status {
+    let result = match res.json::<XblStatusResponse>().await {
+        Ok(res) => res,
+        Err(_) => return Status::PossibleProblems,
+    };
+    if result.status.overall.state != "None" {
+        return Status::PossibleProblems;
+    }
+    let minecraft_adjacent_services = [13, 16, 20, 22, 23, 24, 25];
+    for service in result.core_services {
+        if !minecraft_adjacent_services.contains(&service.id) {
+            continue;
+        }
+        for scenario in service.possible_scenarios {
+            if scenario.id == service.status.id {
+                return Status::DefiniteProblems;
+            }
+        }
+    }
+    for service in result.titles {
+        if !minecraft_adjacent_services.contains(&service.id) {
+            continue;
+        }
+        for scenario in service.possible_scenarios {
+            if scenario.id == service.status.id {
+                return Status::DefiniteProblems;
+            }
+        }
+    }
+    Status::Operational
+}
+async fn mojang_auth_test(res: Response) -> Status {
+    if (res.json::<MojangAuthServerStatus>().await).is_err() {
+        return Status::PossibleProblems;
+    };
+    Status::Operational
+}
+async fn mojang_session_test(res: Response) -> Status {
+    let result = match res.json::<MojangSessionServerStatus>().await {
+        Ok(res) => res,
+        Err(_) => return Status::PossibleProblems,
+    };
+    if result.name != "valkyrie_pilot" {
+        return Status::DefiniteProblems
+    }
+    Status::Operational
+}
+async fn mojang_api_test(res: Response) -> Status {
+    let result = match res.json::<MojangApiStatus>().await {
+        Ok(res) => res,
+        Err(_) => return Status::PossibleProblems,
+    };
+    if result.id != "b5dcf182a943402bb75ba057a6508fed" {
+        return Status::DefiniteProblems
+    }
+    Status::Operational
+}
+async fn minecraft_api_test(res: Response) -> Status {
+    if res.json::<MinecraftApiStatus>().await.is_err() {
+        return Status::PossibleProblems
+    }
+    // TODO: Set up MSA with an account so this can be better tested
+    Status::Operational
+}
+
+enum Status {
+    Operational,
+    PossibleProblems,
+    DefiniteProblems,
+}
+
+impl ToString for Status {
+    fn to_string(&self) -> String {
+        match self {
+            Self::Operational => "Operational".to_string(),
+            Self::PossibleProblems => "PossibleProblems".to_string(),
+            Self::DefiniteProblems => "DefiniteProblems".to_string(),
+        }
+    }
+}

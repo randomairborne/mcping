@@ -1,11 +1,35 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
-
+mod services;
+mod structures;
+use crate::structures::{MCPingResponse, PlayerSample, Players, Version};
 use axum::{extract::Path, http::StatusCode, response::IntoResponse, routing::get};
 use mcping::{Bedrock, Java};
-use std::borrow::Cow;
+use services::{get_mcstatus, refresh_mcstatus};
+use std::{borrow::Cow, sync::Arc};
+use structures::ServicesResponse;
+use tokio::sync::RwLock;
 
 #[tokio::main]
 async fn main() {
+    let http_client = reqwest::Client::builder()
+        .connect_timeout(std::time::Duration::from_secs(10))
+        .user_agent(concat!(
+            "minecraftserviceschecker/",
+            env!("CARGO_PKG_VERSION"),
+            " (https://github.com/randomairborne/mcping)"
+        ))
+        .redirect(reqwest::redirect::Policy::limited(100))
+        .build()
+        .unwrap();
+    let current_mcstatus: Arc<RwLock<ServicesResponse>> = Arc::new(RwLock::new(ServicesResponse {
+        xbox: "".to_string(),
+        mojang_auth: "".to_string(),
+        mojang_session: "".to_string(),
+        mojang_api: "".to_string(),
+        minecraft_api: "".to_string(),
+    }));
+    get_mcstatus(http_client.clone(), Arc::clone(&current_mcstatus)).await;
+    tokio::spawn(refresh_mcstatus(http_client, Arc::clone(&current_mcstatus)));
     let app = axum::Router::new()
         .route(
             "/",
@@ -26,6 +50,15 @@ async fn main() {
             }),
         )
         .route(
+            "/jetbrains.woff2",
+            get(|| async {
+                (
+                    [("Content-Type", "font/woff2")],
+                    include_bytes!("../jetbrains.woff2").to_vec(),
+                )
+            }),
+        )
+        .route(
             "/api",
             get(|| async { ([("Content-Type", "text/html")], include_str!("../api.html")) }),
         )
@@ -35,7 +68,14 @@ async fn main() {
         )
         .route("/api/:address", get(handle_java_ping))
         .route("/api/java/:address", get(handle_java_ping))
-        .route("/api/bedrock/:address", get(handle_bedrock_ping));
+        .route("/api/bedrock/:address", get(handle_bedrock_ping))
+        .route(
+            "/api/services",
+            get({
+                let current_mcstatus = Arc::clone(&current_mcstatus);
+                move || services::handle_mcstatus(Arc::clone(&current_mcstatus))
+            }),
+        );
     axum::Server::bind(&([0, 0, 0, 0], 8080).into())
         .serve(app.into_make_service())
         .await
@@ -106,37 +146,28 @@ async fn handle_bedrock_ping(Path(address): Path<String>) -> Result<impl IntoRes
     })
 }
 
-#[derive(serde::Serialize, Debug, Clone)]
-struct MCPingResponse {
-    pub latency: u64,
-    pub players: Players,
-    pub motd: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub icon: Option<String>,
-    pub version: Version,
-}
-
-#[derive(serde::Serialize, Debug, Clone)]
-struct Version {
-    pub protocol: i64,
-    pub broadcast: String,
-}
-
-#[derive(serde::Serialize, Debug, Clone)]
-struct Players {
-    pub online: i64,
-    pub maximum: i64,
-    pub sample: Vec<PlayerSample>,
-}
-
-#[derive(serde::Serialize, Debug, Clone)]
-struct PlayerSample {
-    pub uuid: String,
-    pub name: String,
-}
-
-enum Failure {
+pub enum Failure {
     ConnectionFailed(mcping::Error),
+    StatusReqwestFailed(reqwest::Error),
+    JsonSerializationFailed(serde_json::Error),
+}
+
+impl From<mcping::Error> for Failure {
+    fn from(e: mcping::Error) -> Self {
+        Self::ConnectionFailed(e)
+    }
+}
+
+impl From<reqwest::Error> for Failure {
+    fn from(e: reqwest::Error) -> Self {
+        Self::StatusReqwestFailed(e)
+    }
+}
+
+impl From<serde_json::Error> for Failure {
+    fn from(e: serde_json::Error) -> Self {
+        Self::JsonSerializationFailed(e)
+    }
 }
 
 impl IntoResponse for Failure {
@@ -145,6 +176,14 @@ impl IntoResponse for Failure {
             Self::ConnectionFailed(e) => (
                 format!("Error connecting to the server: {}", e).into(),
                 StatusCode::OK,
+            ),
+            Self::StatusReqwestFailed(e) => (
+                format!("Error connecting to the Xbox or Mojang API: {}", e).into(),
+                StatusCode::BAD_GATEWAY,
+            ),
+            Self::JsonSerializationFailed(e) => (
+                format!("Error serializing JSON: {}", e).into(),
+                StatusCode::INTERNAL_SERVER_ERROR,
             ),
         };
         if status == StatusCode::INTERNAL_SERVER_ERROR {
@@ -158,21 +197,6 @@ impl IntoResponse for Failure {
             .status(status)
             .body(axum::body::boxed(axum::body::Full::from(
                 serde_json::json!({ "error": error }).to_string(),
-            )))
-            .unwrap()
-    }
-}
-
-impl IntoResponse for MCPingResponse {
-    fn into_response(self) -> axum::response::Response {
-        axum::response::Response::builder()
-            .header(
-                axum::http::header::CONTENT_TYPE,
-                axum::headers::HeaderValue::from_static("application/json"),
-            )
-            .status(StatusCode::OK)
-            .body(axum::body::boxed(axum::body::Full::from(
-                serde_json::to_string(&self).unwrap_or_else(|_| r#"{"error": "Error serializing json! Please make a bug report: https://github.com/randomairborne/mcping/issues"}"#.to_string()),
             )))
             .unwrap()
     }

@@ -6,9 +6,12 @@
     <meta name="viewport" content="width=device-width" />
     <title>Minecraft server tester</title>
     <link rel="icon" type="image/png" href="/icon.png">
-    <link href="https://fonts.googleapis.com/css?family=JetBrains+Mono&display=swap" rel="preload" as="style" />
-    <link href="https://fonts.googleapis.com/css?family=JetBrains+Mono&display=swap" rel="stylesheet" />
     <style>
+        @font-face {
+            font-family: 'Source Sans Pro';
+            src: url(/jetbrains.woff2);
+        }
+
         body {
             text-align: center;
             background: hsl(200, 4%, 10%);
@@ -49,6 +52,13 @@
             text-decoration: none;
         }
 
+        footer {
+            position: absolute;
+            bottom: 0;
+            padding: 10px;
+            width: fit-content;
+        }
+
         .java {
             background-color: chartreuse;
             color: black;
@@ -64,7 +74,7 @@
     </style>
 </head>
 
-<body>
+<body onload="checkMojangStatus()">
     <noscript>
         <h1>This website unfortunately requires JavaScript.</h1>
     </noscript>
@@ -97,6 +107,8 @@
     </div>
     <br id="special-break" style="display: none;">
     <a href="/api/">API</a>
+    <footer>Mojang API status: <div id="apistatus"></div>
+    </footer>
 </body>
 <script>
     const statusElement = document.getElementById("status");
@@ -128,6 +140,24 @@
         versionElement.innerHTML = mineParse(response['version']['broadcast']).raw;
         document.getElementById('select').style.display = "none";
         document.getElementById('response').style.display = null;
+    }
+</script>
+<script>
+    async function checkMojangStatus() {
+        let response = await fetch('/api/services', {})
+            .then(response => response.json());
+        let status = '| ';
+        for (const key in response) {
+            status = status + key + ": "
+            switch (response[key]) {
+                case "Operational": { status = status + '<span style="color:lime">✔</span>'; break; }
+                case "PossibleProblems": { status = status + '<span style="color:yellow">-</span>'; break; }
+                case "DefiniteProblems": { status = status + '<span style="color:red">x</span>'; break; }
+                default: { status = status + '<span style="color:aqua">?</span>' };
+            }
+            status = status + ' | '
+        }
+        document.getElementById('apistatus').innerHTML = status;
     }
 </script>
 <script>
