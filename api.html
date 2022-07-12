@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Minecraft server tester</title>
+    <link rel="icon" type="image/png" href="/icon.png">
+    <link href="https://fonts.googleapis.com/css?family=JetBrains+Mono&display=swap" rel="preload" as="style" />
+    <link href="https://fonts.googleapis.com/css?family=JetBrains+Mono&display=swap" rel="stylesheet" />
+    <style>
+        body {
+            text-align: center;
+            justify-content: center;
+            background: hsl(200, 4%, 10%);
+            color: #43baf4;
+            font-family: "JetBrains Mono", monospace;
+        }
+        a {
+            color: #43baf4;
+        }
+        iframe {
+            background-color: white;
+            scrollbar-base-color: hsl(200, 4%, 10%);
+        }
+    </style>
+</head>
+<body>
+    <h1>MCping API</h1>
+    <p>The MCping API is very simple. There is a Java API at /api/java/, and a bedrock api at /api/bedrock/. To specify what server to ping, you append that server to the end of the URL, like so. </p>
+    <a href="/api/java/mcping.me">/api/java/mcping.me</a>
+    <br>
+    <p>The response will look like so, with an "icon" base64 PNG field added if the server has an icon. The latency is in mlliseconds. Keep in mind that some servers may use signcode colors for the MOTD and player sample. Your application should handle this. The player sample is often used for advertising, so take it with a grain of salt.  The Bedrock API response is the same, with the caveat of never returning the icon.</p>
+    <iframe src="/api/java/mcping.me">MCping ping response</iframe>
+</body>
+</html>

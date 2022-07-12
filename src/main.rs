@@ -25,6 +25,14 @@ async fn main() {
                 )
             }),
         )
+        .route(
+            "/api",
+            get(|| async { ([("Content-Type", "text/html")], include_str!("../api.html")) }),
+        )
+        .route(
+            "/api/",
+            get(|| async { ([("Content-Type", "text/html")], include_str!("../api.html")) }),
+        )
         .route("/api/:address", get(handle_java_ping))
         .route("/api/java/:address", get(handle_java_ping))
         .route("/api/bedrock/:address", get(handle_bedrock_ping));
@@ -84,7 +92,11 @@ async fn handle_bedrock_ping(Path(address): Path<String>) -> Result<impl IntoRes
     };
     Ok(MCPingResponse {
         latency,
-        players: Players { online: response.players_online.unwrap_or(-1), maximum: response.players_max.unwrap_or(-1), sample: Vec::new() },
+        players: Players {
+            online: response.players_online.unwrap_or(-1),
+            maximum: response.players_max.unwrap_or(-1),
+            sample: Vec::new(),
+        },
         motd: response.motd_1,
         icon: None,
         version: Version {
@@ -92,6 +104,35 @@ async fn handle_bedrock_ping(Path(address): Path<String>) -> Result<impl IntoRes
             broadcast: response.version_name,
         },
     })
+}
+
+#[derive(serde::Serialize, Debug, Clone)]
+struct MCPingResponse {
+    pub latency: u64,
+    pub players: Players,
+    pub motd: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub icon: Option<String>,
+    pub version: Version,
+}
+
+#[derive(serde::Serialize, Debug, Clone)]
+struct Version {
+    pub protocol: i64,
+    pub broadcast: String,
+}
+
+#[derive(serde::Serialize, Debug, Clone)]
+struct Players {
+    pub online: i64,
+    pub maximum: i64,
+    pub sample: Vec<PlayerSample>,
+}
+
+#[derive(serde::Serialize, Debug, Clone)]
+struct PlayerSample {
+    pub uuid: String,
+    pub name: String,
 }
 
 enum Failure {
@@ -120,34 +161,6 @@ impl IntoResponse for Failure {
             )))
             .unwrap()
     }
-}
-
-#[derive(serde::Serialize, Debug, Clone)]
-struct MCPingResponse {
-    pub latency: u64,
-    pub players: Players,
-    pub motd: String,
-    pub icon: Option<String>,
-    pub version: Version,
-}
-
-#[derive(serde::Serialize, Debug, Clone)]
-struct Version {
-    pub protocol: i64,
-    pub broadcast: String,
-}
-
-#[derive(serde::Serialize, Debug, Clone)]
-struct Players {
-    pub online: i64,
-    pub maximum: i64,
-    pub sample: Vec<PlayerSample>,
-}
-
-#[derive(serde::Serialize, Debug, Clone)]
-struct PlayerSample {
-    pub uuid: String,
-    pub name: String,
 }
 
 impl IntoResponse for MCPingResponse {
