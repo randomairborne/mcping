@@ -103,7 +103,7 @@ pub struct MojangAuthServerStatus {
 pub struct MojangSessionServerStatus {
     pub id: String,
     pub name: String,
-    pub properties: Vec<MojangSessionServerProperties>
+    pub properties: Vec<MojangSessionServerProperties>,
 }
 
 #[derive(Deserialize, Clone, Debug)]
