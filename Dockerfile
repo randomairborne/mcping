@@ -1,16 +1,16 @@
 
-FROM rust:alpine AS builder
+FROM rust AS builder
 
 WORKDIR /build
 COPY . .
 
-RUN apk add musl-dev pkgconf openssl-dev
+RUN apt install pkg-config openssl-dev
 RUN cargo build --release
 
-FROM alpine
+FROM debian
 
 WORKDIR /
-RUN apk add openssl
+
 COPY --from=builder /build/target/release/mcping /usr/bin/mcping
 
 EXPOSE 8080
