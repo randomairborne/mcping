@@ -10,7 +10,7 @@ RUN cargo build --release
 FROM alpine
 
 WORKDIR /
-
+RUN apk add openssl
 COPY --from=builder /build/target/release/mcping /usr/bin/mcping
 
 EXPOSE 8080
