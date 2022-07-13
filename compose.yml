@@ -5,6 +5,8 @@ services:
     restart: always
     networks:
       - proxy
+    environment:
+      - LOG=${LOG}
     deploy:
       labels:
         traefik.enable: "true"
