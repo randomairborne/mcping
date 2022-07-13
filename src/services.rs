@@ -79,6 +79,7 @@ pub async fn get_mcstatus(http: reqwest::Client, resp: Arc<RwLock<ServicesRespon
         Err(e) => Status::DefiniteProblems(Some(e)),
     }
     .to_string();
+    tracing::debug!("Xbox: {:#?} | Mojang Auth: {:#?} | Mojang Session: {:#?} | Mojang API: {:#?} | Minecraft API: {:#?}", xbox, mojang_auth, mojang_session, mojang_api, minecraft_api);
     let mut response = resp.write().await;
     *response = crate::structures::ServicesResponse {
         xbox,
@@ -87,7 +88,6 @@ pub async fn get_mcstatus(http: reqwest::Client, resp: Arc<RwLock<ServicesRespon
         mojang_api,
         minecraft_api,
     };
-    tracing::debug!("Minecraft Services response: {:#?}", response);
 }
 
 pub async fn refresh_mcstatus(http: reqwest::Client, resp: Arc<RwLock<ServicesResponse>>) {
@@ -160,6 +160,7 @@ async fn minecraft_api_test(res: Response) -> Status {
     Status::Operational
 }
 
+#[derive(Debug)]
 enum Status {
     Operational,
     PossibleProblems(Option<reqwest::Error>),
