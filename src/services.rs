@@ -85,6 +85,7 @@ pub async fn get_mcstatus(http: reqwest::Client, resp: Arc<RwLock<ServicesRespon
         mojang_api,
         minecraft_api,
     };
+    tracing::debug!("Minecraft Services response: {:#?}", response);
 }
 
 pub async fn refresh_mcstatus(http: reqwest::Client, resp: Arc<RwLock<ServicesResponse>>) {

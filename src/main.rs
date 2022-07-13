@@ -11,6 +11,9 @@ use tokio::sync::RwLock;
 
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::fmt()
+        .with_env_filter(tracing_subscriber::EnvFilter::from_env("LOG"))
+        .init();
     let http_client = reqwest::Client::builder()
         .connect_timeout(std::time::Duration::from_secs(10))
         .user_agent(concat!(
