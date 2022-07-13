@@ -3,7 +3,6 @@ FROM rust AS builder
 WORKDIR /build
 COPY . .
 
-RUN apt install pkg-config libssl-dev
 RUN cargo build --release
 
 FROM debian
