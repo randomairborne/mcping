@@ -1,4 +1,3 @@
-
 FROM rust AS builder
 
 WORKDIR /build
