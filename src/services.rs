@@ -2,6 +2,7 @@ use axum::response::IntoResponse;
 use reqwest::Response;
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use std::fmt::Debug;
 
 use crate::{
     structures::{
@@ -159,8 +160,6 @@ async fn minecraft_api_test(res: Response) -> Status {
     // TODO: Set up MSA with an account so this can be better tested
     Status::Operational
 }
-
-#[derive(Debug)]
 enum Status {
     Operational,
     PossibleProblems(Option<reqwest::Error>),
@@ -174,5 +173,16 @@ impl ToString for Status {
             Self::PossibleProblems(_) => "PossibleProblems".to_string(),
             Self::DefiniteProblems(_) => "DefiniteProblems".to_string(),
         }
+    }
+}
+
+impl Debug for Status {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Operational => write!(f, "Operational"),
+            Self::PossibleProblems(e) => write!(f, "PossibleProblems: {:?}", e),
+            Self::DefiniteProblems(e) => write!(f, "PossibleProblems: {:?}", e),
+        }
+
     }
 }
