@@ -2,7 +2,7 @@ use axum::response::IntoResponse;
 use reqwest::Response;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use std::fmt::Debug;
+use std::fmt::{Display, Debug};
 
 use crate::{
     structures::{
@@ -58,36 +58,31 @@ pub async fn get_mcstatus(http: reqwest::Client, resp: Arc<RwLock<ServicesRespon
     let xbox = match xbl {
         Ok(r) => xbl_test(r).await,
         Err(e) => Status::DefiniteProblems(Some(e)),
-    }
-    .to_string();
+    };
     let mojang_auth = match mojang_auth {
         Ok(r) => mojang_auth_test(r).await,
         Err(e) => Status::DefiniteProblems(Some(e)),
-    }
-    .to_string();
+    };
     let mojang_session = match mojang_session {
         Ok(r) => mojang_session_test(r).await,
         Err(e) => Status::DefiniteProblems(Some(e)),
-    }
-    .to_string();
+    };
     let mojang_api = match mojang_api {
         Ok(r) => mojang_api_test(r).await,
         Err(e) => Status::DefiniteProblems(Some(e)),
-    }
-    .to_string();
+    };
     let minecraft_api = match minecraft_api {
         Ok(r) => minecraft_api_test(r).await,
         Err(e) => Status::DefiniteProblems(Some(e)),
-    }
-    .to_string();
+    };
     tracing::debug!("Xbox: {:?} | Mojang Auth: {:?} | Mojang Session: {:?} | Mojang API: {:?} | Minecraft API: {:?}", xbox, mojang_auth, mojang_session, mojang_api, minecraft_api);
     let mut response = resp.write().await;
     *response = crate::structures::ServicesResponse {
-        xbox,
-        mojang_auth,
-        mojang_session,
-        mojang_api,
-        minecraft_api,
+        xbox: xbox.display(),
+        mojang_auth: mojang_auth.display(),
+        mojang_session: mojang_session.display(),
+        mojang_api: mojang_api.display(),
+        minecraft_api: minecraft_api.display(),
     };
 }
 
@@ -166,13 +161,14 @@ enum Status {
     DefiniteProblems(Option<reqwest::Error>),
 }
 
-impl ToString for Status {
-    fn to_string(&self) -> String {
+impl Display for Status {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Operational => "Operational".to_string(),
-            Self::PossibleProblems(_) => "PossibleProblems".to_string(),
-            Self::DefiniteProblems(_) => "DefiniteProblems".to_string(),
+            Self::Operational => write!(f, "Operational"),
+            Self::PossibleProblems(e) => write!(f, "PossibleProblems"),
+            Self::DefiniteProblems(e) => write!(f, "DefiniteProblems"),
         }
+
     }
 }
 
