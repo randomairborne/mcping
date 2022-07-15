@@ -83,6 +83,7 @@ pub async fn get_mcstatus(http: reqwest::Client, resp: Arc<RwLock<ServicesRespon
         mojang_session: format!("{}", mojang_session),
         mojang_api: format!("{}", mojang_api),
         minecraft_api: format!("{}", minecraft_api)
+    }
 }
 
 pub async fn refresh_mcstatus(http: reqwest::Client, resp: Arc<RwLock<ServicesResponse>>) {
