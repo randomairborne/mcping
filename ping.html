@@ -17,7 +17,13 @@
             background: hsl(200, 4%, 10%);
             font-family: "JetBrains Mono", monospace;
             color: #ffffff;
+            
+            min-height:98vh;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            overflow-x: hidden;
         }
+
 
         input {
             background: hsl(192, 2%, 40%);
@@ -53,10 +59,10 @@
         }
 
         footer {
-            position: absolute;
+            min-height:50px;
             bottom: 0;
             padding: 10px;
-            width: fit-content;
+            width: 100%;
         }
 
         .java {
