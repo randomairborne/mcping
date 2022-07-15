@@ -78,12 +78,11 @@ pub async fn get_mcstatus(http: reqwest::Client, resp: Arc<RwLock<ServicesRespon
     tracing::debug!("Xbox: {:?} | Mojang Auth: {:?} | Mojang Session: {:?} | Mojang API: {:?} | Minecraft API: {:?}", xbox, mojang_auth, mojang_session, mojang_api, minecraft_api);
     let mut response = resp.write().await;
     *response = crate::structures::ServicesResponse {
-        xbox: xbox.display(),
-        mojang_auth: mojang_auth.display(),
-        mojang_session: mojang_session.display(),
-        mojang_api: mojang_api.display(),
-        minecraft_api: minecraft_api.display(),
-    };
+        xbox: format!("{}", xbox),
+        mojang_auth: format!("{}", mojang_auth),
+        mojang_session: format!("{}", mojang_session),
+        mojang_api: format!("{}", mojang_api),
+        minecraft_api: format!("{}", minecraft_api)
 }
 
 pub async fn refresh_mcstatus(http: reqwest::Client, resp: Arc<RwLock<ServicesResponse>>) {
