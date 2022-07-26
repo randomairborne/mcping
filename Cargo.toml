@@ -5,10 +5,8 @@ edition = "2021"
 
 
 [dependencies]
-axum = { version = "0.5", features = ["headers"] }
+axum = { version = "0.5", features = ["http1", "headers"], default-features = false }
 tokio = { version = "1", features = ["rt-multi-thread", "macros"]}
-tracing = "0.1.35"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 mcping = { path = "mcping", features = ["tokio-runtime"] }
 reqwest = { version = "0.11", features = ["json", "trust-dns", "rustls-tls-webpki-roots"], default-features=false }
 serde = { version = "1", features = ["derive"] }

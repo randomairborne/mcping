@@ -75,7 +75,6 @@ pub async fn get_mcstatus(http: reqwest::Client, resp: Arc<RwLock<ServicesRespon
         Ok(r) => minecraft_api_test(r).await,
         Err(e) => Status::DefiniteProblems(Some(e)),
     };
-    tracing::debug!("Xbox: {:?} | Mojang Auth: {:?} | Mojang Session: {:?} | Mojang API: {:?} | Minecraft API: {:?}", xbox, mojang_auth, mojang_session, mojang_api, minecraft_api);
     let mut response = resp.write().await;
     *response = crate::structures::ServicesResponse {
         xbox: format!("{}", xbox),
@@ -165,8 +164,8 @@ impl Display for Status {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Operational => write!(f, "Operational"),
-            Self::PossibleProblems(e) => write!(f, "PossibleProblems"),
-            Self::DefiniteProblems(e) => write!(f, "DefiniteProblems"),
+            Self::PossibleProblems(_) => write!(f, "PossibleProblems"),
+            Self::DefiniteProblems(_) => write!(f, "DefiniteProblems"),
         }
 
     }
