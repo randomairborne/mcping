@@ -118,7 +118,7 @@ impl Connection {
 
         // If a port exists we want to try and parse it and if not we will
         // default to 25565 (Minecraft)
-        let port = if let Some(port) = parts.next() {
+        let mut port = if let Some(port) = parts.next() {
             port.parse::<u16>().map_err(|_| Error::InvalidAddress)?
         } else {
             25565
@@ -144,11 +144,14 @@ impl Connection {
             .ok();
         let ip: IpAddr = match srv_lookup {
             Some(lookup) => match lookup.into_iter().next() {
-                Some(record) => resolver
-                    .lookup_ip(record.target().to_string())
-                    .await
-                    .ok()
-                    .and_then(|lookup_ip| lookup_ip.into_iter().next()),
+                Some(record) => {
+                    port = record.port();
+                    resolver
+                        .lookup_ip(record.target().to_string())
+                        .await
+                        .ok()
+                        .and_then(|lookup_ip| lookup_ip.into_iter().next())
+                }
                 None => None,
             },
             None => resolver
@@ -158,7 +161,6 @@ impl Connection {
                 .and_then(|lookup_ip| lookup_ip.into_iter().next()),
         }
         .ok_or(Error::DnsLookupFailed)?;
-
         let socket_addr = SocketAddr::new(ip, port);
 
         let stream = TcpStream::connect(&socket_addr).await?.into_std()?;

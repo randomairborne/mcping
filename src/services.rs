@@ -1,8 +1,8 @@
 use axum::response::IntoResponse;
 use reqwest::Response;
+use std::fmt::{Debug, Display};
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use std::fmt::{Display, Debug};
 
 use crate::{
     structures::{
@@ -81,7 +81,7 @@ pub async fn get_mcstatus(http: reqwest::Client, resp: Arc<RwLock<ServicesRespon
         mojang_auth: format!("{}", mojang_auth),
         mojang_session: format!("{}", mojang_session),
         mojang_api: format!("{}", mojang_api),
-        minecraft_api: format!("{}", minecraft_api)
+        minecraft_api: format!("{}", minecraft_api),
     }
 }
 
@@ -167,7 +167,6 @@ impl Display for Status {
             Self::PossibleProblems(_) => write!(f, "PossibleProblems"),
             Self::DefiniteProblems(_) => write!(f, "DefiniteProblems"),
         }
-
     }
 }
 
@@ -178,6 +177,5 @@ impl Debug for Status {
             Self::PossibleProblems(e) => write!(f, "PossibleProblems: {:?}", e),
             Self::DefiniteProblems(e) => write!(f, "DefiniteProblems: {:?}", e),
         }
-
     }
 }
