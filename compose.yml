@@ -3,22 +3,7 @@ services:
   mcping:
     image: ghcr.io/randomairborne/mcping
     restart: always
-    networks:
-      - proxy
+    ports:
+      - "8080:9001"
     environment:
       - LOG=${LOG}
-    deploy:
-      labels:
-        traefik.enable: "true"
-        traefik.http.middlewares.mcping-https-redirect.redirectscheme.scheme: https
-        traefik.http.routers.mcping-http.middlewares: mcping-https-redirect
-        traefik.http.routers.mcping-http.entrypoints: http
-        traefik.http.routers.mcping-http.rule: Host(`${HOST}`) || Host(`www.${HOST}`)
-        traefik.http.routers.mcping.entrypoints: https
-        traefik.http.routers.mcping.rule: Host(`${HOST}`) || Host(`www.${HOST}`)
-        traefik.http.routers.mcping.tls.certresolver: letsencrypt
-        traefik.http.services.mcping.loadbalancer.server.port: 8080
-
-networks:
-  proxy:
-    external: true
