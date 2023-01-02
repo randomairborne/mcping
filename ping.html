@@ -98,6 +98,7 @@
         <button id="ping" onclick="doPing('/api/java/')" class="java">Ping Java</button>
         <button id="bedrock" onclick="doPing('/api/bedrock/')" class="bedrock">Ping Bedrock</button>
         <br>
+        Your IP: <span id="ip"></span>
         <br>
         <div id="status"></div>
     </div>
@@ -129,9 +130,11 @@
     const faviconElement = document.getElementById("favicon");
     const latencyElement = document.getElementById("latency");
     const versionElement = document.getElementById("version");
+    const ipElement = document.getElementById("ip");
     const motdElement = document.getElementById("motd");
     const modContainerElement = document.getElementById("mods-container");
     const specialBreak = document.getElementById("special-break");
+    ipElement.innerText = await fetch("https://v4.giveip.io/raw").then(response => response.text());
     async function doPing(apiLocation) {
         let address = document.getElementById('address').value;
         specialBreak.style.display = null;
