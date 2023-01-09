@@ -3,6 +3,8 @@ FROM rust:alpine AS builder
 WORKDIR /build
 COPY . .
 
+RUN apk add musl-dev
+
 RUN cargo build --release
 
 FROM alpine
