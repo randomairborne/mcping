@@ -76,10 +76,19 @@ async fn main() {
                 move || services::handle_mcstatus(Arc::clone(&current_mcstatus))
             }),
         );
-    axum::Server::bind(&([0, 0, 0, 0], 8080).into())
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
+    axum::Server::bind(
+        &(
+            [0, 0, 0, 0],
+            std::env::var("PORT")
+                .unwrap_or_else(|_| 8080.to_string())
+                .parse::<u16>()
+                .unwrap_or(8080),
+        )
+            .into(),
+    )
+    .serve(app.into_make_service())
+    .await
+    .unwrap();
 }
 
 async fn handle_java_ping(Path(address): Path<String>) -> Result<impl IntoResponse, Failure> {
