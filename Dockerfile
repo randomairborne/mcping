@@ -1,11 +1,11 @@
-FROM rust AS builder
+FROM rust:alpine AS builder
 
 WORKDIR /build
 COPY . .
 
 RUN cargo build --release
 
-FROM debian
+FROM alpine
 
 WORKDIR /
 
