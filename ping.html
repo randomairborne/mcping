@@ -9,7 +9,8 @@
     <meta property="og:image" content="https://mcping.me/icon.png">
     <meta property="og:url" content="https://mcping.me/">
     <meta property="og:site_name" content="mcpingme">
-    <meta property="og:description" content="valkyrie_pilot's minecraft server tester. Pings RakNet, Netty, and Legacy servers using SLP, and the Mojang API using reqwest. https://github.com/randomairborne/mcping">
+    <meta property="og:description"
+        content="valkyrie_pilot's minecraft server tester. Pings RakNet, Netty, and Legacy servers using SLP, and the Mojang API using reqwest. https://github.com/randomairborne/mcping">
     <title>Minecraft server tester</title>
     <link rel="icon" type="image/png" href="/icon.png">
     <style>
@@ -24,7 +25,7 @@
             font-family: "JetBrains Mono", monospace;
             color: #ffffff;
 
-            min-height:98vh;
+            min-height: 98vh;
             display: grid;
             grid-template-rows: auto 1fr auto;
             overflow-x: hidden;
@@ -65,7 +66,7 @@
         }
 
         footer {
-            min-height:50px;
+            min-height: 50px;
             bottom: 0;
             padding: 10px;
             width: 100%;
@@ -98,6 +99,7 @@
         <button id="ping" onclick="doPing('/api/java/')" class="java">Ping Java</button>
         <button id="bedrock" onclick="doPing('/api/bedrock/')" class="bedrock">Ping Bedrock</button>
         <br>
+        <br>
         Your IP: <span id="ip"></span>
         <br>
         <div id="status"></div>
@@ -118,7 +120,6 @@
         <br>
         <button onclick="window.location.reload()">Ping Another</button>
     </div>
-    <iframe src="https://github.com/sponsors/randomairborne/button" title="Sponsor me" height="35" width="116" style="border: 0;"></iframe>
     <br id="special-break" style="display: none;">
     <a href="/api/">API</a>
     <footer>Mojang API status: <div id="apistatus"></div>
@@ -134,7 +135,7 @@
     const motdElement = document.getElementById("motd");
     const modContainerElement = document.getElementById("mods-container");
     const specialBreak = document.getElementById("special-break");
-    ipElement.innerText = await fetch("https://v4.giveip.io/raw").then(response => response.text());
+    fetch("https://v4.giveip.io/raw").then(response => response.text()).then(s => ipElement.innerText = s);
     async function doPing(apiLocation) {
         let address = document.getElementById('address').value;
         specialBreak.style.display = null;
