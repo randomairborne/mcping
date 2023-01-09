@@ -14,10 +14,6 @@ jobs:
       - name: Check out code into the proper directory
         uses: actions/checkout@v3
 
-      - name: Set up QEMU
-        id: qemu
-        uses: docker/setup-qemu-action@v1
-
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -35,4 +31,4 @@ jobs:
           context: .
           push: true
           tags: ghcr.io/${{ env.REPO }}:latest
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64

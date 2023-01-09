@@ -22,11 +22,11 @@ async fn main() {
         .build()
         .unwrap();
     let current_mcstatus: Arc<RwLock<ServicesResponse>> = Arc::new(RwLock::new(ServicesResponse {
-        xbox: "".to_string(),
-        mojang_auth: "".to_string(),
-        mojang_session: "".to_string(),
-        mojang_api: "".to_string(),
-        minecraft_api: "".to_string(),
+        xbox: String::new(),
+        mojang_auth: String::new(),
+        mojang_session: String::new(),
+        mojang_api: String::new(),
+        minecraft_api: String::new(),
     }));
     get_mcstatus(http_client.clone(), Arc::clone(&current_mcstatus)).await;
     tokio::spawn(refresh_mcstatus(http_client, Arc::clone(&current_mcstatus)));
@@ -174,20 +174,20 @@ impl IntoResponse for Failure {
     fn into_response(self) -> axum::response::Response {
         let (error, status): (Cow<str>, StatusCode) = match self {
             Self::ConnectionFailed(e) => (
-                format!("Error connecting to the server: {}", e).into(),
+                format!("Error connecting to the server: {e}").into(),
                 StatusCode::OK,
             ),
             Self::StatusReqwestFailed(e) => (
-                format!("Error connecting to the Xbox or Mojang API: {}", e).into(),
+                format!("Error connecting to the Xbox or Mojang API: {e}").into(),
                 StatusCode::BAD_GATEWAY,
             ),
             Self::JsonSerializationFailed(e) => (
-                format!("Error serializing JSON: {}", e).into(),
+                format!("Error serializing JSON: {e}").into(),
                 StatusCode::INTERNAL_SERVER_ERROR,
             ),
         };
         if status == StatusCode::INTERNAL_SERVER_ERROR {
-            println!("Error processing request: {}", error);
+            println!("Error processing request: {error}");
         }
         axum::response::Response::builder()
             .header(

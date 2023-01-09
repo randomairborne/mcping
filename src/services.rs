@@ -77,11 +77,11 @@ pub async fn get_mcstatus(http: reqwest::Client, resp: Arc<RwLock<ServicesRespon
     };
     let mut response = resp.write().await;
     *response = crate::structures::ServicesResponse {
-        xbox: format!("{}", xbox),
-        mojang_auth: format!("{}", mojang_auth),
-        mojang_session: format!("{}", mojang_session),
-        mojang_api: format!("{}", mojang_api),
-        minecraft_api: format!("{}", minecraft_api),
+        xbox: xbox.to_string(),
+        mojang_auth: mojang_auth.to_string(),
+        mojang_session: mojang_session.to_string(),
+        mojang_api: mojang_api.to_string(),
+        minecraft_api: minecraft_api.to_string(),
     }
 }
 
@@ -174,8 +174,8 @@ impl Debug for Status {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Operational => write!(f, "Operational"),
-            Self::PossibleProblems(e) => write!(f, "PossibleProblems: {:?}", e),
-            Self::DefiniteProblems(e) => write!(f, "DefiniteProblems: {:?}", e),
+            Self::PossibleProblems(e) => write!(f, "PossibleProblems: {e:?}"),
+            Self::DefiniteProblems(e) => write!(f, "DefiniteProblems: {e:?}"),
         }
     }
 }
