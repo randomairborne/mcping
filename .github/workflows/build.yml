@@ -1,11 +1,16 @@
-name: CI
+name: Build Service
 on:
   push:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
+  check:
+    uses: ./.github/workflows/check.yml
   build:
+    needs: [check]
     runs-on: ubuntu-latest
-
     steps:
       - name: Correct env
         run:
@@ -35,7 +40,7 @@ jobs:
           push: true
           tags: ghcr.io/${{ env.REPO }}:latest
           platforms: linux/amd64
-          
+
       - run: flyctl deploy
         env:
-          FLY_ACCESS_TOKEN: ${{ secrets.FLY_ACCESS_TOKEN }}1
+          FLY_ACCESS_TOKEN: ${{ secrets.FLY_ACCESS_TOKEN }}
