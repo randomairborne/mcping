@@ -3,7 +3,7 @@ mod services;
 mod structures;
 use crate::structures::{MCPingResponse, PlayerSample, Players, Version};
 use axum::{extract::Path, http::StatusCode, response::IntoResponse, routing::get};
-use mcping::{Bedrock, Java};
+use libmcping::{Bedrock, Java};
 use services::{get_mcstatus, refresh_mcstatus};
 use std::{borrow::Cow, sync::Arc};
 use structures::ServicesResponse;
@@ -92,7 +92,7 @@ async fn main() {
 }
 
 async fn handle_java_ping(Path(address): Path<String>) -> Result<impl IntoResponse, Failure> {
-    let (latency, response) = match mcping::tokio::get_status(Java {
+    let (latency, response) = match libmcping::tokio::get_status(Java {
         server_address: address,
         timeout: Some(std::time::Duration::from_secs(5)),
     })
@@ -127,7 +127,7 @@ async fn handle_java_ping(Path(address): Path<String>) -> Result<impl IntoRespon
 }
 
 async fn handle_bedrock_ping(Path(address): Path<String>) -> Result<impl IntoResponse, Failure> {
-    let (latency, response) = match mcping::tokio::get_status(Bedrock {
+    let (latency, response) = match libmcping::tokio::get_status(Bedrock {
         server_address: address,
         timeout: Some(std::time::Duration::from_secs(5)),
         tries: 5,
@@ -156,13 +156,13 @@ async fn handle_bedrock_ping(Path(address): Path<String>) -> Result<impl IntoRes
 }
 
 pub enum Failure {
-    ConnectionFailed(mcping::Error),
+    ConnectionFailed(libmcping::Error),
     StatusReqwestFailed(reqwest::Error),
     JsonSerializationFailed(serde_json::Error),
 }
 
-impl From<mcping::Error> for Failure {
-    fn from(e: mcping::Error) -> Self {
+impl From<libmcping::Error> for Failure {
+    fn from(e: libmcping::Error) -> Self {
         Self::ConnectionFailed(e)
     }
 }
