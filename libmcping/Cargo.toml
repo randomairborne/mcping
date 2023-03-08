@@ -1,5 +1,5 @@
 [package]
-name = "mcping"
+name = "libmcping"
 version = "0.2.0"
 license = "MIT OR Apache-2.0"
 authors = ["Scetch <me@scet.ch>", "Cldfire <cldfire3@gmail.com>", "valkyrie_pilot <valk@randomairborne.dev>"]
@@ -14,7 +14,7 @@ readme = "README.md"
 tokio-runtime = ["tokio", "async-trait"]
 
 [dependencies]
-async-trait = { version = "0.1.48", optional = true }
+async-trait = { version = "0.1", optional = true }
 byteorder = "1"
 rand = "0.8"
 serde = { version = "1", features = ["derive"] }
