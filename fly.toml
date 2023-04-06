@@ -1,4 +1,4 @@
-# fly.toml file generated for mcping-me on 2023-01-08T20:56:39-07:00
+# fly.toml file generated for mcping-me on 2023-04-06T16:51:12Z
 
 app = "mcping-me"
 kill_signal = "SIGINT"
