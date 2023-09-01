@@ -126,7 +126,7 @@ impl Connection {
 
         // Attempt to lookup the ip of the server from an srv record, falling back on the ip from a host
         let resolver =
-            TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default()).unwrap();
+            TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default());
 
         // Determine what host to lookup by doing the following:
         // - Lookup the SRV record for the domain, if it exists perform a lookup of the ip from the target

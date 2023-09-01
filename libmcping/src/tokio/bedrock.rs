@@ -97,7 +97,7 @@ impl Connection {
 
         // Do a hostname lookup
         let resolver =
-            TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default()).unwrap();
+            TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default());
 
         let ip = resolver
             .lookup_ip(host.as_str())
