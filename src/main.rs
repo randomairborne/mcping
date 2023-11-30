@@ -86,7 +86,9 @@ async fn main() {
         )
             .into(),
     )
-    .serve(app.into_make_service())
+    .serve(app.into_make_service()).with_graceful_shutdown(
+        shutdown_signal()
+    )
     .await
     .unwrap();
 }
@@ -209,4 +211,24 @@ impl IntoResponse for Failure {
             )))
             .unwrap()
     }
+}
+
+async fn shutdown_signal() {
+    #[cfg(target_family = "unix")]
+    {
+        use tokio::signal::unix::{signal, SignalKind};
+        let mut interrupt = signal(SignalKind::interrupt()).expect("Failed to listen to sigint");
+        let mut quit = signal(SignalKind::quit()).expect("Failed to listen to sigquit");
+        let mut terminate = signal(SignalKind::terminate()).expect("Failed to listen to sigterm");
+
+        tokio::select! {
+            _ = interrupt.recv() => {},
+            _ = quit.recv() => {},
+            _ = terminate.recv() => {}
+        }
+    }
+    #[cfg(not(target_family = "unix"))]
+    tokio::signal::ctrl_c()
+        .await
+        .expect("Failed to listen to ctrl+c");
 }
