@@ -86,9 +86,8 @@ async fn main() {
         )
             .into(),
     )
-    .serve(app.into_make_service()).with_graceful_shutdown(
-        shutdown_signal()
-    )
+    .serve(app.into_make_service())
+    .with_graceful_shutdown(shutdown_signal())
     .await
     .unwrap();
 }
