@@ -15,4 +15,4 @@ COPY --from=builder /build/target/release/mcping /usr/bin/mcping
 
 EXPOSE 8080
 
-CMD ["/usr/bin/mcping"]
+ENTRYPOINT "/usr/bin/mcping"
