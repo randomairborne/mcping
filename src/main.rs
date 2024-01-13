@@ -8,11 +8,13 @@ use libmcping::{Bedrock, Java};
 use services::{get_mcstatus, refresh_mcstatus};
 use structures::ServicesResponse;
 use tokio::{net::TcpListener, sync::RwLock};
+use tower_http::services::ServeDir;
 
 use crate::structures::{MCPingResponse, PlayerSample, Players, Version};
 
 #[tokio::main]
 async fn main() {
+    let asset_dir = std::env::var("ASSET_DIR").unwrap_or_else(|_| "./assets/".to_owned());
     let http_client = reqwest::Client::builder()
         .connect_timeout(std::time::Duration::from_secs(10))
         .user_agent(concat!(
@@ -32,42 +34,12 @@ async fn main() {
     }));
     get_mcstatus(http_client.clone(), Arc::clone(&current_mcstatus)).await;
     tokio::spawn(refresh_mcstatus(http_client, Arc::clone(&current_mcstatus)));
+    let serve_dir = ServeDir::new(&asset_dir)
+        .append_index_html_on_directories(true)
+        .precompressed_gzip()
+        .precompressed_br()
+        .precompressed_deflate();
     let app = axum::Router::new()
-        .route(
-            "/",
-            get(|| async {
-                (
-                    [("Content-Type", "text/html")],
-                    include_str!("../ping.html"),
-                )
-            }),
-        )
-        .route(
-            "/icon.png",
-            get(|| async {
-                (
-                    [("Content-Type", "image/png")],
-                    include_bytes!("../icon.png").to_vec(),
-                )
-            }),
-        )
-        .route(
-            "/jetbrains.woff2",
-            get(|| async {
-                (
-                    [("Content-Type", "font/woff2")],
-                    include_bytes!("../jetbrains.woff2").to_vec(),
-                )
-            }),
-        )
-        .route(
-            "/api",
-            get(|| async { ([("Content-Type", "text/html")], include_str!("../api.html")) }),
-        )
-        .route(
-            "/api/",
-            get(|| async { ([("Content-Type", "text/html")], include_str!("../api.html")) }),
-        )
         .route("/api/:address", get(handle_java_ping))
         .route("/api/java/:address", get(handle_java_ping))
         .route("/api/bedrock/:address", get(handle_bedrock_ping))
@@ -77,7 +49,8 @@ async fn main() {
                 let current_mcstatus = Arc::clone(&current_mcstatus);
                 move || services::handle_mcstatus(Arc::clone(&current_mcstatus))
             }),
-        );
+        )
+        .fallback_service(serve_dir);
     let socket_address = SocketAddr::from((
         [0, 0, 0, 0],
         std::env::var("PORT")
