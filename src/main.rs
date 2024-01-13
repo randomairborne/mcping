@@ -5,8 +5,10 @@ use crate::structures::{MCPingResponse, PlayerSample, Players, Version};
 use axum::{extract::Path, http::StatusCode, response::IntoResponse, routing::get};
 use libmcping::{Bedrock, Java};
 use services::{get_mcstatus, refresh_mcstatus};
+use std::net::SocketAddr;
 use std::{borrow::Cow, sync::Arc};
 use structures::ServicesResponse;
+use tokio::net::TcpListener;
 use tokio::sync::RwLock;
 
 #[tokio::main]
@@ -76,20 +78,18 @@ async fn main() {
                 move || services::handle_mcstatus(Arc::clone(&current_mcstatus))
             }),
         );
-    axum::Server::bind(
-        &(
-            [0, 0, 0, 0],
-            std::env::var("PORT")
-                .unwrap_or_else(|_| 8080.to_string())
-                .parse::<u16>()
-                .unwrap_or(8080),
-        )
-            .into(),
-    )
-    .serve(app.into_make_service())
-    .with_graceful_shutdown(shutdown_signal())
-    .await
-    .unwrap();
+    let socket_address = SocketAddr::from((
+        [0, 0, 0, 0],
+        std::env::var("PORT")
+            .unwrap_or_else(|_| 8080.to_string())
+            .parse::<u16>()
+            .unwrap(),
+    ));
+    let tcp = TcpListener::bind(socket_address).await.unwrap();
+    axum::serve(tcp, app)
+        .with_graceful_shutdown(vss::shutdown_signal())
+        .await
+        .unwrap();
 }
 
 async fn handle_java_ping(Path(address): Path<String>) -> Result<impl IntoResponse, Failure> {
@@ -202,32 +202,12 @@ impl IntoResponse for Failure {
         axum::response::Response::builder()
             .header(
                 axum::http::header::CONTENT_TYPE,
-                axum::headers::HeaderValue::from_static("application/json"),
+                axum::http::HeaderValue::from_static("application/json"),
             )
             .status(status)
-            .body(axum::body::boxed(axum::body::Full::from(
+            .body(axum::body::Body::new(
                 serde_json::json!({ "error": error }).to_string(),
-            )))
+            ))
             .unwrap()
     }
-}
-
-async fn shutdown_signal() {
-    #[cfg(target_family = "unix")]
-    {
-        use tokio::signal::unix::{signal, SignalKind};
-        let mut interrupt = signal(SignalKind::interrupt()).expect("Failed to listen to sigint");
-        let mut quit = signal(SignalKind::quit()).expect("Failed to listen to sigquit");
-        let mut terminate = signal(SignalKind::terminate()).expect("Failed to listen to sigterm");
-
-        tokio::select! {
-            _ = interrupt.recv() => {},
-            _ = quit.recv() => {},
-            _ = terminate.recv() => {}
-        }
-    }
-    #[cfg(not(target_family = "unix"))]
-    tokio::signal::ctrl_c()
-        .await
-        .expect("Failed to listen to ctrl+c");
 }
