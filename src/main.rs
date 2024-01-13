@@ -6,6 +6,7 @@ use std::{borrow::Cow, net::SocketAddr, sync::Arc};
 
 use axum::{extract::Path, http::StatusCode, response::IntoResponse, routing::get};
 use libmcping::{Bedrock, Java};
+use reqwest::header::HeaderMap;
 use tokio::{net::TcpListener, sync::RwLock};
 use tower_http::services::ServeDir;
 
@@ -17,8 +18,11 @@ use crate::{
 #[tokio::main]
 async fn main() {
     let asset_dir = std::env::var("ASSET_DIR").unwrap_or_else(|_| "./assets/".to_owned());
+    let mut default_headers = HeaderMap::new();
+    default_headers.insert("Accept", "application/json".parse().unwrap());
     let http_client = reqwest::Client::builder()
         .connect_timeout(std::time::Duration::from_secs(10))
+        .default_headers(default_headers)
         .user_agent(concat!(
             "minecraftserviceschecker/",
             env!("CARGO_PKG_VERSION"),

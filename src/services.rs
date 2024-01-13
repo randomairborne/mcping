@@ -33,31 +33,11 @@ pub async fn handle_mcstatus(
 }
 
 pub async fn get_mcstatus(http: reqwest::Client, resp: Arc<RwLock<ServicesResponse>>) {
-    let xbl = http
-        .get(XBL_STATUS_URL)
-        .header("Accept", "application/json")
-        .send()
-        .await;
-    let mojang_auth = http
-        .get(MOJANG_AUTHSERVER_URL)
-        .header("Accept", "application/json")
-        .send()
-        .await;
-    let mojang_session = http
-        .get(MOJANG_SESSIONSERVER_URL)
-        .header("Accept", "application/json")
-        .send()
-        .await;
-    let mojang_api = http
-        .get(MOJANG_API_URL)
-        .header("Accept", "application/json")
-        .send()
-        .await;
-    let minecraft_api = http
-        .get(MINECRAFT_SERVICES_API_URL)
-        .header("Accept", "application/json")
-        .send()
-        .await;
+    let xbl = http.get(XBL_STATUS_URL).send().await;
+    let mojang_auth = http.get(MOJANG_AUTHSERVER_URL).send().await;
+    let mojang_session = http.get(MOJANG_SESSIONSERVER_URL).send().await;
+    let mojang_api = http.get(MOJANG_API_URL).send().await;
+    let minecraft_api = http.get(MINECRAFT_SERVICES_API_URL).send().await;
     let xbox = match xbl {
         Ok(r) => xbl_test(r).await,
         Err(e) => Status::DefiniteProblems(Some(e)),
@@ -79,7 +59,7 @@ pub async fn get_mcstatus(http: reqwest::Client, resp: Arc<RwLock<ServicesRespon
         Err(e) => Status::DefiniteProblems(Some(e)),
     };
     let mut response = resp.write().await;
-    *response = crate::structures::ServicesResponse {
+    *response = ServicesResponse {
         xbox: xbox.to_string(),
         mojang_auth: mojang_auth.to_string(),
         mojang_session: mojang_session.to_string(),
