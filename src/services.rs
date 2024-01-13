@@ -1,10 +1,9 @@
-use axum::extract::State;
 use std::{
     fmt::{Debug, Display},
     sync::Arc,
 };
 
-use axum::response::IntoResponse;
+use axum::{extract::State, response::IntoResponse};
 use reqwest::Response;
 use tokio::sync::RwLock;
 

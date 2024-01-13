@@ -1,16 +1,18 @@
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 mod services;
 mod structures;
+
 use std::{borrow::Cow, net::SocketAddr, sync::Arc};
 
 use axum::{extract::Path, http::StatusCode, response::IntoResponse, routing::get};
 use libmcping::{Bedrock, Java};
-use services::{get_mcstatus, refresh_mcstatus};
-use structures::ServicesResponse;
 use tokio::{net::TcpListener, sync::RwLock};
 use tower_http::services::ServeDir;
 
-use crate::structures::{MCPingResponse, PlayerSample, Players, Version};
+use crate::{
+    services::{get_mcstatus, refresh_mcstatus},
+    structures::{MCPingResponse, PlayerSample, Players, ServicesResponse, Version},
+};
 
 #[tokio::main]
 async fn main() {
