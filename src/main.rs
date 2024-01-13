@@ -43,14 +43,9 @@ async fn main() {
         .route("/api/:address", get(handle_java_ping))
         .route("/api/java/:address", get(handle_java_ping))
         .route("/api/bedrock/:address", get(handle_bedrock_ping))
-        .route(
-            "/api/services",
-            get({
-                let current_mcstatus = Arc::clone(&current_mcstatus);
-                move || services::handle_mcstatus(Arc::clone(&current_mcstatus))
-            }),
-        )
-        .fallback_service(serve_dir);
+        .route("/api/services", get(services::handle_mcstatus))
+        .fallback_service(serve_dir)
+        .with_state(current_mcstatus);
     let socket_address = SocketAddr::from((
         [0, 0, 0, 0],
         std::env::var("PORT")

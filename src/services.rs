@@ -1,3 +1,4 @@
+use axum::extract::State;
 use std::{
     fmt::{Debug, Display},
     sync::Arc,
@@ -24,11 +25,11 @@ const XBL_STATUS_URL: &str = "https://xnotify.xboxlive.com/servicestatusv6/US/en
 
 #[allow(clippy::unused_async)]
 pub async fn handle_mcstatus(
-    resp: Arc<RwLock<ServicesResponse>>,
+    State(state): State<Arc<RwLock<ServicesResponse>>>,
 ) -> Result<impl IntoResponse, Failure> {
     Ok((
         [("Content-Type", "application/json")],
-        serde_json::to_string(&*resp.read().await)?,
+        serde_json::to_string(&*state.read().await)?,
     ))
 }
 
