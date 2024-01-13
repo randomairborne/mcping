@@ -1,7 +1,10 @@
+use std::{
+    fmt::{Debug, Display},
+    sync::Arc,
+};
+
 use axum::response::IntoResponse;
 use reqwest::Response;
-use std::fmt::{Debug, Display};
-use std::sync::Arc;
 use tokio::sync::RwLock;
 
 use crate::{

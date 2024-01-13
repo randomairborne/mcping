@@ -1,12 +1,13 @@
 //! Implementation of the RakNet ping/pong protocol.
 //! https://wiki.vg/Raknet_Protocol#Unconnected_Ping
 
-use async_trait::async_trait;
 use std::{
     io::{self, Cursor},
     net::SocketAddr,
     time::{Duration, Instant},
 };
+
+use async_trait::async_trait;
 use tokio::{
     io::{AsyncRead, AsyncReadExt, AsyncWriteExt},
     net::UdpSocket,

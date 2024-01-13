@@ -1,16 +1,18 @@
 //! Implementation of the Java Minecraft ping protocol.
 //! https://wiki.vg/Server_List_Ping
 
-use crate::{Error, Pingable};
-use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
-use serde::Deserialize;
 use std::{
     io::{self, Cursor, Read, Write},
     net::{IpAddr, SocketAddr, TcpStream},
     time::{Duration, Instant},
 };
+
+use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
+use serde::Deserialize;
 use thiserror::Error;
 use trust_dns_resolver::{config::*, Resolver};
+
+use crate::{Error, Pingable};
 
 /// Configuration for pinging a Java server.
 ///

@@ -1,15 +1,17 @@
 //! Implementation of the RakNet ping/pong protocol.
 //! https://wiki.vg/Raknet_Protocol#Unconnected_Ping
 
-use crate::{Error, Pingable};
-use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use std::{
     io::{self, Cursor, Read},
     net::{Ipv4Addr, SocketAddr, UdpSocket},
     thread,
     time::{Duration, Instant},
 };
+
+use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use trust_dns_resolver::{config::*, Resolver};
+
+use crate::{Error, Pingable};
 
 /// Raknets default OFFLINE_MESSAGE_DATA_ID.
 ///

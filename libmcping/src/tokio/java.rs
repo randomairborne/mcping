@@ -1,12 +1,13 @@
 //! Implementation of the Java Minecraft ping protocol.
 //! https://wiki.vg/Server_List_Ping
 
-use async_trait::async_trait;
 use std::{
     io::{self, Cursor},
     net::{IpAddr, SocketAddr},
     time::{Duration, Instant},
 };
+
+use async_trait::async_trait;
 use tokio::{
     io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt},
     net::TcpStream,
