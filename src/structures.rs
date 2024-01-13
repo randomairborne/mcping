@@ -157,12 +157,12 @@ impl axum::response::IntoResponse for MCPingResponse {
         axum::response::Response::builder()
             .header(
                 axum::http::header::CONTENT_TYPE,
-                axum::headers::HeaderValue::from_static("application/json"),
+                axum::http::HeaderValue::from_static("application/json"),
             )
             .status(axum::http::StatusCode::OK)
-            .body(axum::body::boxed(axum::body::Full::from(
+            .body(axum::body::Body::from(
                 serde_json::to_string(&self).unwrap_or_else(|_| r#"{"error": "Error serializing json! Please make a bug report: https://github.com/randomairborne/mcping/issues"}"#.to_string()),
-            )))
+            ))
             .unwrap()
     }
 }
