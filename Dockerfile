@@ -4,7 +4,7 @@ RUN apk add zstd brotli gzip
 
 COPY /assets/ /assets/
 
-RUN find /assets/ -type f -exec gzip -k9 '{}' \; -exec brotli -k9 '{}' \; -exec zstd -qk19 '{}' \;
+RUN --mount=type=cache,target=/assets/ find /assets/ -type f -exec gzip -k9 '{}' \; -exec brotli -k9 '{}' \; -exec zstd -qk19 '{}' \;
 
 FROM rust:alpine AS builder
 
@@ -13,7 +13,7 @@ COPY . .
 
 RUN apk add musl-dev
 
-RUN cargo build --release
+RUN --mount=type=cache,target=/target/ --mount=type=cache,target=/usr/local/cargo/ cargo build --release
 
 FROM alpine
 

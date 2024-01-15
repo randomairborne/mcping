@@ -37,6 +37,8 @@ jobs:
           push: true
           tags: ghcr.io/${{ env.REPO }}:latest
           platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy:
     runs-on: ubuntu-latest
