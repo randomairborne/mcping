@@ -15,7 +15,9 @@ RUN apk add musl-dev
 
 RUN echo $PATH
 
-RUN --mount=type=cache,target=/target/ --mount=type=cache,target=/usr/local/cargo/ cargo build --release
+RUN cargo version
+
+RUN --mount=type=cache,target=./target/ --mount=type=cache,target=/usr/local/cargo/ cargo build --release
 
 FROM alpine
 
