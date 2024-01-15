@@ -17,13 +17,16 @@ RUN echo $PATH
 
 RUN cargo version
 
-RUN --mount=type=cache,target=./target/ --mount=type=cache,target=/usr/local/cargo/ cargo build --release
+RUN \
+    --mount=type=cache,target=/build/target/ \
+    --mount=type=cache,target=/usr/local/cargo/ \
+    cargo build --release && cp /build/target/release/mcping /build/mcping
 
 FROM alpine
 
 WORKDIR /
 
-COPY --from=builder /build/target/release/mcping /usr/bin/mcping
+COPY --from=builder /build/mcping /usr/bin/mcping
 COPY --from=compressor /assets/ /var/www/mcping/
 
 EXPOSE 8080
