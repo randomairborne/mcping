@@ -4,7 +4,7 @@ RUN apk add zstd brotli gzip
 
 COPY /assets/ /assets/
 
-RUN --mount=type=cache,target=/assets/ find /assets/ -type f -exec gzip -k9 '{}' \; -exec brotli -k9 '{}' \; -exec zstd -qk19 '{}' \;
+RUN find /assets/ -type f -exec gzip -k9 '{}' \; -exec brotli -k9 '{}' \; -exec zstd -qk19 '{}' \;
 
 FROM rust:alpine AS builder
 
