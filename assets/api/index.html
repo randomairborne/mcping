@@ -1,70 +1,87 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
-    <meta property="og:title" content="valkyrie_pilot's minecraft server testing API">
-    <meta property="og:type" content="website">
-    <meta property="og:image" content="https://mcping.me/icon.png">
-    <meta property="og:url" content="https://mcping.me/api/">
-    <meta property="og:site_name" content="mcpingme API">
-    <meta property="og:description" content="valkyrie_pilot's minecraft server testing API. Pings RakNet, Netty, and Legacy servers using SLP, and the Mojang API using reqwest. https://github.com/randomairborne/mcping">
+    <meta
+      property="og:title"
+      content="valkyrie_pilot's minecraft server testing API"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://mcping.me/icon.png" />
+    <meta property="og:url" content="https://mcping.me/api/" />
+    <meta property="og:site_name" content="mcpingme API" />
+    <meta
+      property="og:description"
+      content="valkyrie_pilot's minecraft server testing API. Pings RakNet, Netty, and Legacy servers using SLP, and the Mojang API using reqwest. https://github.com/randomairborne/mcping"
+    />
     <title>Minecraft server tester</title>
-    <link rel="icon" type="image/png" href="/icon.png">
+    <link rel="icon" type="image/png" href="/icon.png" />
     <style>
-        @font-face {
-            font-family: 'Source Sans Pro';
-            src: url(/jetbrains.woff2);
-        }
+      @font-face {
+        font-family: "Source Sans Pro";
+        src: url(/jetbrains.woff2);
+      }
 
-        body {
-            text-align: center;
-            background: hsl(200, 4%, 10%);
-            color: white;
-            font-family: "JetBrains Mono", monospace;
-            margin-left: 20%;
-            margin-right: 20%;
-        }
+      body {
+        text-align: center;
+        background: hsl(200, 4%, 10%);
+        color: white;
+        font-family: "JetBrains Mono", monospace;
+        margin-left: 20%;
+        margin-right: 20%;
+      }
 
-        a {
-            color: #43baf4;
-        }
+      a {
+        color: #43baf4;
+      }
     </style>
-</head>
+  </head>
 
-<body onLoad="loadExampleResponses()">
+  <body onLoad="loadExampleResponses()">
     <h1>MCping API</h1>
-    <p>The MCping API is very simple. There is a Java API at /api/java/, and a bedrock api at /api/bedrock/. To
-        specify
-        what server to ping, you append that server to the end of the URL, like so. </p>
+    <p>
+      The MCping API is very simple. There is a Java API at /api/java/, and a
+      bedrock api at /api/bedrock/. To specify what server to ping, you append
+      that server to the end of the URL, like so.
+    </p>
     <a href="/api/java/mcping.me">/api/java/mcping.me</a>
-    <br>
-    <p>The response will look like so, with an "icon" base64 PNG field added if the server has an icon. The latency
-        is
-        in mlliseconds, from Toronto, Canada.. Keep in mind that some servers may use signcode colors for the MOTD
-        and
-        player sample. Your application should handle this. The player sample is often used for advertising, so take
-        it
-        with a grain of salt. The Bedrock API response is the same, with the caveat of never returning the icon.</p>
+    <br />
+    <p>
+      The response will look like so, with an "icon" base64 PNG field added if
+      the server has an icon. The latency is in mlliseconds, from Toronto,
+      Canada.. Keep in mind that some servers may use signcode colors for the
+      MOTD and player sample. Your application should handle this. The player
+      sample is often used for advertising, so take it with a grain of salt. The
+      Bedrock API response is the same, with the caveat of never returning the
+      icon.
+    </p>
     <pre><code id="examplePingResponse" style="text-align: left; display: inline-block;"></code></pre>
-    <br>
-    <p>There is also a Mojang Services API, at <a href="/api/services">/api/services</a>. This is useful for
-        checking if
-        the authservers or Xbox Services are having issues. Example response below. The possible values for each
-        field
-        are DefiniteProblems, PossibleProblems, and Operational.</p>
+    <br />
+    <p>
+      There is also a Mojang Services API, at
+      <a href="/api/services">/api/services</a>. This is useful for checking if
+      the authservers or Xbox Services are having issues. Example response
+      below. The possible values for each field are DefiniteProblems,
+      PossibleProblems, and Operational.
+    </p>
     <pre><code id="exampleServicesResponse" style="text-align: left; display: inline-block;"></code></pre>
-</body>
-<script>
+  </body>
+  <script>
     async function loadExampleResponses() {
-        let ping = await fetch('/api/java/mcping.me', {})
-            .then(response => response.json());
-        document.getElementById('examplePingResponse').innerText = JSON.stringify(ping, null, '  ');
-        let services = await fetch('/api/services', {})
-            .then(response => response.json());
-        document.getElementById('exampleServicesResponse').innerText = JSON.stringify(services, null, '  ');
+      let ping = await fetch("/api/java/mcping.me", {}).then((response) =>
+        response.json(),
+      );
+      document.getElementById("examplePingResponse").innerText = JSON.stringify(
+        ping,
+        null,
+        "  ",
+      );
+      let services = await fetch("/api/services", {}).then((response) =>
+        response.json(),
+      );
+      document.getElementById("exampleServicesResponse").innerText =
+        JSON.stringify(services, null, "  ");
     }
-</script>
-
+  </script>
 </html>

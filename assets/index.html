@@ -1,131 +1,140 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
-    <meta property="og:title" content="valkyrie_pilot's minecraft server tester">
-    <meta property="og:type" content="website">
-    <meta property="og:image" content="https://mcping.me/icon.png">
-    <meta property="og:url" content="https://mcping.me/">
-    <meta property="og:site_name" content="mcpingme">
-    <meta property="og:description"
-        content="valkyrie_pilot's minecraft server tester. Pings RakNet, Netty, and Legacy servers using SLP, and the Mojang API using reqwest. https://github.com/randomairborne/mcping">
+    <meta
+      property="og:title"
+      content="valkyrie_pilot's minecraft server tester"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://mcping.me/icon.png" />
+    <meta property="og:url" content="https://mcping.me/" />
+    <meta property="og:site_name" content="mcpingme" />
+    <meta
+      property="og:description"
+      content="valkyrie_pilot's minecraft server tester. Pings RakNet, Netty, and Legacy servers using SLP, and the Mojang API using reqwest. https://github.com/randomairborne/mcping"
+    />
     <title>Minecraft server tester</title>
-    <link rel="icon" type="image/png" href="/icon.png">
+    <link rel="icon" type="image/png" href="/icon.png" />
     <style>
-        @font-face {
-            font-family: 'JetBrains Mono';
-            src: url(/jetbrains.woff2);
-        }
+      @font-face {
+        font-family: "JetBrains Mono";
+        src: url(/jetbrains.woff2);
+      }
 
-        body {
-            text-align: center;
-            background: hsl(200, 4%, 10%);
-            font-family: "JetBrains Mono", monospace;
-            color: #ffffff;
+      body {
+        text-align: center;
+        background: hsl(200, 4%, 10%);
+        font-family: "JetBrains Mono", monospace;
+        color: #ffffff;
 
-            min-height: 98vh;
-            display: grid;
-            grid-template-rows: auto 1fr auto;
-            overflow-x: hidden;
-        }
+        min-height: 98vh;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        overflow-x: hidden;
+      }
 
+      input {
+        background: hsl(192, 2%, 40%);
+        border: #1b8b77;
+        color: #ffffff;
+        padding: 20px;
+        border-radius: 3px;
+      }
 
-        input {
-            background: hsl(192, 2%, 40%);
-            border: #1b8b77;
-            color: #ffffff;
-            padding: 20px;
-            border-radius: 3px;
-        }
+      input::placeholder {
+        color: hsl(192, 2%, 70%);
+      }
 
-        input::placeholder {
-            color: hsl(192, 2%, 70%);
-        }
+      a {
+        color: #43baf4;
+      }
 
-        a {
-            color: #43baf4;
-        }
+      img {
+        image-rendering: crisp-edges;
+        image-rendering: pixelated;
+      }
 
-        img {
-            image-rendering: crisp-edges;
-            image-rendering: pixelated;
-        }
+      button {
+        border: none;
+        border-radius: 5px;
+        padding: 15px;
+        color: white;
+        cursor: pointer;
+        display: inline-block;
+        background-color: #43baf4;
+        text-align: center;
+        text-decoration: none;
+      }
 
-        button {
-            border: none;
-            border-radius: 5px;
-            padding: 15px;
-            color: white;
-            cursor: pointer;
-            display: inline-block;
-            background-color: #43baf4;
-            text-align: center;
-            text-decoration: none;
-        }
+      footer {
+        min-height: 50px;
+        bottom: 0;
+        padding: 10px;
+        width: 100%;
+      }
 
-        footer {
-            min-height: 50px;
-            bottom: 0;
-            padding: 10px;
-            width: 100%;
-        }
+      .java {
+        background-color: chartreuse;
+        color: black;
+      }
 
-        .java {
-            background-color: chartreuse;
-            color: black;
-        }
+      .bedrock {
+        background-color: black;
+      }
 
-        .bedrock {
-            background-color: black;
-        }
-
-        .response {
-            font-size: 20pt;
-        }
+      .response {
+        font-size: 20pt;
+      }
     </style>
-</head>
+  </head>
 
-<body onload="checkMojangStatus()">
+  <body onload="checkMojangStatus()">
     <noscript>
-        <h1>This website unfortunately requires JavaScript.</h1>
+      <h1>This website unfortunately requires JavaScript.</h1>
     </noscript>
     <h1>Minecraft server tester</h1>
     <div id="select">
-        <input id="address" placeholder="Server address" />
-        <br>
-        <br>
-        <button id="ping" onclick="doPing('/api/java/')" class="java">Ping Java</button>
-        <button id="bedrock" onclick="doPing('/api/bedrock/')" class="bedrock">Ping Bedrock</button>
-        <br>
-        <br>
-        Your IP: <span id="ip"></span>
-        <br>
-        <div id="status"></div>
+      <input id="address" placeholder="Server address" />
+      <br />
+      <br />
+      <button id="ping" onclick="doPing('/api/java/')" class="java">
+        Ping Java
+      </button>
+      <button id="bedrock" onclick="doPing('/api/bedrock/')" class="bedrock">
+        Ping Bedrock
+      </button>
+      <br />
+      <br />
+      Your IP: <span id="ip"></span>
+      <br />
+      <div id="status"></div>
     </div>
-    <div class="response" id="response" style="display: none;">
-        <img id="favicon" height="256" width="256"></img><br>
-        Server online!
-        <div id="latency"></div>
-        <div id="players"></div>
-        <div id="version"></div>
-        <br>
-        <div id="motd"></div>
-        <div id="mods-container" style="display: none;">
-            <br>
-            <div id="mods"></div>
-            <br>
-        </div>
-        <br>
-        <button onclick="window.location.reload()">Ping Another</button>
+    <div class="response" id="response" style="display: none">
+      <img id="favicon" height="256" width="256" /><br />
+      Server online!
+      <div id="latency"></div>
+      <div id="players"></div>
+      <div id="version"></div>
+      <br />
+      <div id="motd"></div>
+      <div id="mods-container" style="display: none">
+        <br />
+        <div id="mods"></div>
+        <br />
+      </div>
+      <br />
+      <button onclick="window.location.reload()">Ping Another</button>
     </div>
-    <br id="special-break" style="display: none;">
+    <br id="special-break" style="display: none" />
     <a href="/api/">API</a>
-    <footer>Mojang API status: <div id="apistatus"></div>
+    <footer>
+      Mojang API status:
+      <div id="apistatus"></div>
     </footer>
-</body>
-<script>
+  </body>
+  <script>
     const statusElement = document.getElementById("status");
     const playersElement = document.getElementById("players");
     const faviconElement = document.getElementById("favicon");
@@ -135,220 +144,238 @@
     const motdElement = document.getElementById("motd");
     const modContainerElement = document.getElementById("mods-container");
     const specialBreak = document.getElementById("special-break");
-    fetch("https://v4.giveip.io/raw").then(response => response.text()).then(s => ipElement.innerText = s);
+    fetch("https://v4.giveip.io/raw")
+      .then((response) => response.text())
+      .then((s) => (ipElement.innerText = s));
     async function doPing(apiLocation) {
-        let address = document.getElementById('address').value;
-        specialBreak.style.display = null;
-        statusElement.innerHTML = "Pinging...";
-        let response = await fetch(apiLocation + address, {})
-            .then(response => response.json());
-        if (response['error'] !== undefined) {
-            statusElement.innerText = response['error'];
-            return;
-        }
-        if (response['icon'] === "" || response['icon'] === undefined) {
-            faviconElement.src = "/icon.png"
-        } else {
-            faviconElement.src = response['icon'];
-        }
-        latencyElement.innerText = "Ping (Toronto): " + response['latency'] + " milliseconds"
-        playersElement.innerText = "Players: " + response['players']['online'] + "/" + response['players']['maximum'];
-        motdElement.innerHTML = mineParse(response['motd']).raw;
-        versionElement.innerHTML = mineParse(response['version']['broadcast']).raw;
-        document.getElementById('select').style.display = "none";
-        document.getElementById('response').style.display = null;
+      let address = document.getElementById("address").value;
+      specialBreak.style.display = null;
+      statusElement.innerHTML = "Pinging...";
+      let response = await fetch(apiLocation + address, {}).then((response) =>
+        response.json(),
+      );
+      if (response["error"] !== undefined) {
+        statusElement.innerText = response["error"];
+        return;
+      }
+      if (response["icon"] === "" || response["icon"] === undefined) {
+        faviconElement.src = "/icon.png";
+      } else {
+        faviconElement.src = response["icon"];
+      }
+      latencyElement.innerText =
+        "Ping (Toronto): " + response["latency"] + " milliseconds";
+      playersElement.innerText =
+        "Players: " +
+        response["players"]["online"] +
+        "/" +
+        response["players"]["maximum"];
+      motdElement.innerHTML = mineParse(response["motd"]).raw;
+      versionElement.innerHTML = mineParse(
+        response["version"]["broadcast"],
+      ).raw;
+      document.getElementById("select").style.display = "none";
+      document.getElementById("response").style.display = null;
     }
-</script>
-<script>
+  </script>
+  <script>
     async function checkMojangStatus() {
-        let response = await fetch('/api/services', {})
-            .then(response => response.json());
-        let status = '| ';
-        for (const key in response) {
-            status = status + key + ": "
-            switch (response[key]) {
-                case "Operational": { status = status + '<span style="color:lime">✔</span>'; break; }
-                case "PossibleProblems": { status = status + '<span style="color:yellow">-</span>'; break; }
-                case "DefiniteProblems": { status = status + '<span style="color:red">x</span>'; break; }
-                default: { status = status + '<span style="color:aqua">?</span>' };
-            }
-            status = status + ' | '
+      let response = await fetch("/api/services", {}).then((response) =>
+        response.json(),
+      );
+      let status = "| ";
+      for (const key in response) {
+        status = status + key + ": ";
+        switch (response[key]) {
+          case "Operational": {
+            status = status + '<span style="color:lime">✔</span>';
+            break;
+          }
+          case "PossibleProblems": {
+            status = status + '<span style="color:yellow">-</span>';
+            break;
+          }
+          case "DefiniteProblems": {
+            status = status + '<span style="color:red">x</span>';
+            break;
+          }
+          default: {
+            status = status + '<span style="color:aqua">?</span>';
+          }
         }
-        document.getElementById('apistatus').innerHTML = status;
+        status = status + " | ";
+      }
+      document.getElementById("apistatus").innerHTML = status;
     }
-</script>
-<script>
+  </script>
+  <script>
     (function () {
+      "use strict";
 
-        'use strict';
-
-        var currId = 0,
-            obfuscators = {},
-            alreadyParsed = [],
-            styleMap = {
-                '§0': 'color:#000000',
-                '§1': 'color:#0000AA',
-                '§2': 'color:#00AA00',
-                '§3': 'color:#00AAAA',
-                '§4': 'color:#AA0000',
-                '§5': 'color:#AA00AA',
-                '§6': 'color:#FFAA00',
-                '§7': 'color:#AAAAAA',
-                '§8': 'color:#555555',
-                '§9': 'color:#5555FF',
-                '§a': 'color:#55FF55',
-                '§b': 'color:#55FFFF',
-                '§c': 'color:#FF5555',
-                '§d': 'color:#FF55FF',
-                '§e': 'color:#FFFF55',
-                '§f': 'color:#FFFFFF',
-                '§l': 'font-weight:bold',
-                '§m': 'text-decoration:line-through',
-                '§n': 'text-decoration:underline',
-                '§o': 'font-style:italic'
-            };
-
-        function obfuscate(elem, string) {
-            var multiMagic,
-                currNode,
-                listLen,
-                nodeI;
-
-            function randInt(min, max) {
-                return Math.floor(Math.random() * (max - min + 1)) + min;
-            }
-
-            function replaceRand(string, i) {
-                var randChar = String.fromCharCode(randInt(64, 95));
-                return string.substr(0, i) + randChar + string.substr(i + 1, string.length);
-            }
-
-            function initMagic(el, str) {
-                var i = 0,
-                    obsStr = str || el.innerHTML,
-                    strLen = obsStr.length;
-                if (!strLen) return;
-                obfuscators[currId].push(
-                    window.setInterval(function () {
-                        if (i >= strLen) i = 0;
-                        obsStr = replaceRand(obsStr, i);
-                        el.innerHTML = obsStr;
-                        i++;
-                    }, 0)
-                );
-            }
-
-            if (string.indexOf('<br>') > -1) {
-                elem.innerHTML = string;
-                listLen = elem.childNodes.length;
-                for (nodeI = 0; nodeI < listLen; nodeI++) {
-                    currNode = elem.childNodes[nodeI];
-                    if (currNode.nodeType === 3) {
-                        multiMagic = document.createElement('span');
-                        multiMagic.innerHTML = currNode.nodeValue;
-                        elem.replaceChild(multiMagic, currNode);
-                        initMagic(multiMagic);
-                    }
-                }
-            } else {
-                initMagic(elem, string);
-            }
-        }
-
-        function applyCode(string, codes) {
-            var elem = document.createElement('span'),
-                obfuscated = false;
-
-            string = string.replace(/\x00/g, '');
-
-            codes.forEach(function (code) {
-                elem.style.cssText += styleMap[code] + ';';
-                if (code === '§k') {
-                    obfuscate(elem, string);
-                    obfuscated = true;
-                }
-            });
-
-            if (!obfuscated) elem.innerHTML = string;
-
-            return elem;
-        }
-
-        function parseStyle(string) {
-            var finalPre = document.createElement('pre'),
-                codes = string.match(/§.{1}/g) || [],
-                codesLen = codes.length,
-                indexes = [],
-                indexDelta,
-                apply = [],
-                strSlice,
-                i;
-
-            if (!obfuscators[currId]) obfuscators[currId] = [];
-
-            string = string.replace(/\n|\\n/g, '<br>');
-
-            for (i = 0; i < codesLen; i++) {
-                indexes.push(string.indexOf(codes[i]));
-                string = string.replace(codes[i], '\x00\x00');
-            }
-
-            if (indexes[0] !== 0) {
-                finalPre.appendChild(applyCode(string.substring(0, indexes[0]), []));
-            }
-
-            for (i = 0; i < codesLen; i++) {
-                indexDelta = indexes[i + 1] - indexes[i];
-                if (indexDelta === 2) {
-                    while (indexDelta === 2) {
-                        apply.push(codes[i]);
-                        i++;
-                        indexDelta = indexes[i + 1] - indexes[i];
-                    }
-                    apply.push(codes[i]);
-                } else {
-                    apply.push(codes[i]);
-                }
-                if (apply.lastIndexOf('§r') > -1) {
-                    apply = apply.slice(apply.lastIndexOf('§r') + 1);
-                }
-                strSlice = string.substring(indexes[i], indexes[i + 1]);
-                finalPre.appendChild(applyCode(strSlice, apply));
-            }
-
-            return finalPre;
-        }
-
-        function clearObfuscators(id) {
-            obfuscators[id].forEach(function (interval) {
-                clearInterval(interval);
-            });
-            alreadyParsed[id] = [];
-            obfuscators[id] = [];
-        }
-
-        window.mineParse = function initParser(input) {
-            var parsed,
-                i = currId;
-            if (i > 0) {
-                while (i--) {
-                    if (alreadyParsed[i].nodeType) {
-                        if (!document.contains(alreadyParsed[i])) {
-                            clearObfuscators(i);
-                        }
-                    }
-                }
-            }
-            parsed = parseStyle(input);
-            alreadyParsed.push(parsed);
-            currId++;
-            return {
-                parsed: parsed,
-                raw: parsed.innerHTML
-            };
+      var currId = 0,
+        obfuscators = {},
+        alreadyParsed = [],
+        styleMap = {
+          "§0": "color:#000000",
+          "§1": "color:#0000AA",
+          "§2": "color:#00AA00",
+          "§3": "color:#00AAAA",
+          "§4": "color:#AA0000",
+          "§5": "color:#AA00AA",
+          "§6": "color:#FFAA00",
+          "§7": "color:#AAAAAA",
+          "§8": "color:#555555",
+          "§9": "color:#5555FF",
+          "§a": "color:#55FF55",
+          "§b": "color:#55FFFF",
+          "§c": "color:#FF5555",
+          "§d": "color:#FF55FF",
+          "§e": "color:#FFFF55",
+          "§f": "color:#FFFFFF",
+          "§l": "font-weight:bold",
+          "§m": "text-decoration:line-through",
+          "§n": "text-decoration:underline",
+          "§o": "font-style:italic",
         };
 
-    }());
-</script>
+      function obfuscate(elem, string) {
+        var multiMagic, currNode, listLen, nodeI;
 
+        function randInt(min, max) {
+          return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function replaceRand(string, i) {
+          var randChar = String.fromCharCode(randInt(64, 95));
+          return (
+            string.substr(0, i) + randChar + string.substr(i + 1, string.length)
+          );
+        }
+
+        function initMagic(el, str) {
+          var i = 0,
+            obsStr = str || el.innerHTML,
+            strLen = obsStr.length;
+          if (!strLen) return;
+          obfuscators[currId].push(
+            window.setInterval(function () {
+              if (i >= strLen) i = 0;
+              obsStr = replaceRand(obsStr, i);
+              el.innerHTML = obsStr;
+              i++;
+            }, 0),
+          );
+        }
+
+        if (string.indexOf("<br>") > -1) {
+          elem.innerHTML = string;
+          listLen = elem.childNodes.length;
+          for (nodeI = 0; nodeI < listLen; nodeI++) {
+            currNode = elem.childNodes[nodeI];
+            if (currNode.nodeType === 3) {
+              multiMagic = document.createElement("span");
+              multiMagic.innerHTML = currNode.nodeValue;
+              elem.replaceChild(multiMagic, currNode);
+              initMagic(multiMagic);
+            }
+          }
+        } else {
+          initMagic(elem, string);
+        }
+      }
+
+      function applyCode(string, codes) {
+        var elem = document.createElement("span"),
+          obfuscated = false;
+
+        string = string.replace(/\x00/g, "");
+
+        codes.forEach(function (code) {
+          elem.style.cssText += styleMap[code] + ";";
+          if (code === "§k") {
+            obfuscate(elem, string);
+            obfuscated = true;
+          }
+        });
+
+        if (!obfuscated) elem.innerHTML = string;
+
+        return elem;
+      }
+
+      function parseStyle(string) {
+        var finalPre = document.createElement("pre"),
+          codes = string.match(/§.{1}/g) || [],
+          codesLen = codes.length,
+          indexes = [],
+          indexDelta,
+          apply = [],
+          strSlice,
+          i;
+
+        if (!obfuscators[currId]) obfuscators[currId] = [];
+
+        string = string.replace(/\n|\\n/g, "<br>");
+
+        for (i = 0; i < codesLen; i++) {
+          indexes.push(string.indexOf(codes[i]));
+          string = string.replace(codes[i], "\x00\x00");
+        }
+
+        if (indexes[0] !== 0) {
+          finalPre.appendChild(applyCode(string.substring(0, indexes[0]), []));
+        }
+
+        for (i = 0; i < codesLen; i++) {
+          indexDelta = indexes[i + 1] - indexes[i];
+          if (indexDelta === 2) {
+            while (indexDelta === 2) {
+              apply.push(codes[i]);
+              i++;
+              indexDelta = indexes[i + 1] - indexes[i];
+            }
+            apply.push(codes[i]);
+          } else {
+            apply.push(codes[i]);
+          }
+          if (apply.lastIndexOf("§r") > -1) {
+            apply = apply.slice(apply.lastIndexOf("§r") + 1);
+          }
+          strSlice = string.substring(indexes[i], indexes[i + 1]);
+          finalPre.appendChild(applyCode(strSlice, apply));
+        }
+
+        return finalPre;
+      }
+
+      function clearObfuscators(id) {
+        obfuscators[id].forEach(function (interval) {
+          clearInterval(interval);
+        });
+        alreadyParsed[id] = [];
+        obfuscators[id] = [];
+      }
+
+      window.mineParse = function initParser(input) {
+        var parsed,
+          i = currId;
+        if (i > 0) {
+          while (i--) {
+            if (alreadyParsed[i].nodeType) {
+              if (!document.contains(alreadyParsed[i])) {
+                clearObfuscators(i);
+              }
+            }
+          }
+        }
+        parsed = parseStyle(input);
+        alreadyParsed.push(parsed);
+        currId++;
+        return {
+          parsed: parsed,
+          raw: parsed.innerHTML,
+        };
+      };
+    })();
+  </script>
 </html>
