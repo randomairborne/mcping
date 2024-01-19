@@ -6,7 +6,7 @@ COPY /assets/ /assets/
 
 RUN find /assets/ -type f ! -name "*.png" -exec pigz -k9 '{}' \; -exec pigz -zk9 '{}' \; -exec brotli -k9 '{}' \; -exec zstd -qk19 '{}' \;
 
-FROM rust:alpine AS builder
+FROM rust:alpine AS server-builder
 
 WORKDIR /build
 COPY . .
@@ -26,8 +26,8 @@ FROM alpine
 
 WORKDIR /
 
-COPY --from=builder /build/mcping /usr/bin/mcping
-COPY --from=compressor /assets/ /var/www/mcping/
+COPY --from=server-builder /build/mcping /usr/bin/mcping
+COPY --from=client-builder /assets/ /var/www/mcping/
 
 EXPOSE 8080
 ENV ASSET_DIR="/var/www/mcping/"
