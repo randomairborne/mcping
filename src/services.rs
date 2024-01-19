@@ -36,6 +36,13 @@ pub async fn get_mcstatus(http: Client) -> ServicesResponse {
         get_mojang(http.clone()),
         get_minecraft(http.clone())
     );
+    trace!(
+        ?xbox,
+        ?mojang_session,
+        ?mojang_api,
+        ?minecraft_api,
+        "Got statuses"
+    );
     ServicesResponse {
         xbox,
         mojang_session,

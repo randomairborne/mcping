@@ -38,8 +38,6 @@ pub struct XblStatusStatusItem {
     pub state: String,
     #[serde(rename(deserialize = "Id"))]
     pub id: i64,
-    #[serde(rename(deserialize = "LastUpdated"))]
-    pub last_updated: String,
 }
 
 #[allow(clippy::module_name_repetitions)]
@@ -47,8 +45,6 @@ pub struct XblStatusStatusItem {
 pub struct XblStatusCoreService {
     #[serde(rename(deserialize = "Id"))]
     pub id: i64,
-    #[serde(rename(deserialize = "Name"))]
-    pub name: String,
     #[serde(rename(deserialize = "Status"))]
     pub status: XblStatusCoreServiceStatus,
     #[serde(rename(deserialize = "Scenarios"))]
@@ -61,14 +57,6 @@ pub struct XblStatusCoreServiceScenario {
     pub id: i64,
     #[serde(rename(deserialize = "Status"))]
     pub status: XblStatusCoreServiceStatus,
-    #[serde(rename(deserialize = "Name"))]
-    pub name: String,
-    #[serde(rename(deserialize = "Devices"))]
-    pub devices: Vec<XblStatusCoreServiceStatus>,
-    #[serde(rename(deserialize = "Incidents"))]
-    pub incidents: Vec<String>,
-    #[serde(rename(deserialize = "Description"))]
-    pub description: String,
 }
 
 #[derive(Deserialize, Clone, Debug)]

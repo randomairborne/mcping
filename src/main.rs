@@ -9,14 +9,20 @@ use libmcping::{Bedrock, Java};
 use reqwest::header::HeaderMap;
 use tokio::{net::TcpListener, sync::RwLock};
 use tower_http::services::ServeDir;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
 
 use crate::{
     services::{get_mcstatus, refresh_mcstatus},
     structures::{MCPingResponse, PlayerSample, Players, ServicesResponse, Version},
 };
 
+#[macro_use]
+extern crate tracing;
+
 #[tokio::main]
 async fn main() {
+    start_tracing();
     let asset_dir = std::env::var("ASSET_DIR").unwrap_or_else(|_| "./assets/".to_owned());
     let mut default_headers = HeaderMap::new();
     default_headers.insert("Accept", "application/json".parse().unwrap());
@@ -179,4 +185,16 @@ impl IntoResponse for Failure {
             ))
             .unwrap()
     }
+}
+
+fn start_tracing() {
+    let env_filter = tracing_subscriber::EnvFilter::builder()
+        .with_default_directive(concat!(env!("CARGO_PKG_NAME"), "=info").parse().unwrap())
+        .with_env_var("LOG")
+        .from_env()
+        .expect("failed to parse env");
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer())
+        .with(env_filter)
+        .init();
 }
