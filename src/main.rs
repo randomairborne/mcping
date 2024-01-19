@@ -44,7 +44,8 @@ async fn main() {
         .append_index_html_on_directories(true)
         .precompressed_gzip()
         .precompressed_br()
-        .precompressed_deflate();
+        .precompressed_deflate()
+        .precompressed_zstd();
     let app = axum::Router::new()
         .route("/api/:address", get(handle_java_ping))
         .route("/api/java/:address", get(handle_java_ping))
