@@ -1,25 +1,22 @@
-use std::{
-    fmt::{Debug, Display},
-    sync::Arc,
-};
+use std::sync::Arc;
 
 use axum::{extract::State, response::IntoResponse};
-use reqwest::Response;
-use tokio::sync::RwLock;
+use reqwest::Client;
+use tokio::{join, select, sync::RwLock};
 
 use crate::{
     structures::{
-        MinecraftApiStatus, MojangApiStatus, MojangAuthServerStatus, MojangSessionServerStatus,
-        ServicesResponse, XblStatusResponse,
+        MinecraftApiStatusEntry, MojangApiStatus, MojangSessionServerStatus, ServicesResponse,
+        Status, XblStatusResponse,
     },
     Failure,
 };
 
-const MOJANG_AUTHSERVER_URL: &str = "https://authserver.mojang.com/";
 const MOJANG_SESSIONSERVER_URL: &str =
     "https://sessionserver.mojang.com/session/minecraft/profile/b5dcf182a943402bb75ba057a6508fed";
 const MOJANG_API_URL: &str = "https://api.mojang.com/users/profiles/minecraft/valkyrie_pilot";
-const MINECRAFT_SERVICES_API_URL: &str = "https://api.minecraftservices.com/";
+const MINECRAFT_SERVICES_API_URL: &str =
+    "https://api.minecraftservices.com/minecraft/profile/lookup/bulk/byname";
 const XBL_STATUS_URL: &str = "https://xnotify.xboxlive.com/servicestatusv6/US/en-US";
 
 #[allow(clippy::unused_async)]
@@ -32,48 +29,39 @@ pub async fn handle_mcstatus(
     ))
 }
 
-pub async fn get_mcstatus(http: reqwest::Client, resp: Arc<RwLock<ServicesResponse>>) {
-    let xbl = http.get(XBL_STATUS_URL).send().await;
-    let mojang_auth = http.get(MOJANG_AUTHSERVER_URL).send().await;
-    let mojang_session = http.get(MOJANG_SESSIONSERVER_URL).send().await;
-    let mojang_api = http.get(MOJANG_API_URL).send().await;
-    let minecraft_api = http.get(MINECRAFT_SERVICES_API_URL).send().await;
-    let xbox = match xbl {
-        Ok(r) => xbl_test(r).await,
-        Err(e) => Status::DefiniteProblems(Some(e)),
-    };
-    let mojang_auth = match mojang_auth {
-        Ok(r) => mojang_auth_test(r).await,
-        Err(e) => Status::DefiniteProblems(Some(e)),
-    };
-    let mojang_session = match mojang_session {
-        Ok(r) => mojang_session_test(r).await,
-        Err(e) => Status::DefiniteProblems(Some(e)),
-    };
-    let mojang_api = match mojang_api {
-        Ok(r) => mojang_api_test(r).await,
-        Err(e) => Status::DefiniteProblems(Some(e)),
-    };
-    let minecraft_api = match minecraft_api {
-        Ok(r) => minecraft_api_test(r).await,
-        Err(e) => Status::DefiniteProblems(Some(e)),
-    };
-    let mut response = resp.write().await;
-    *response = ServicesResponse {
-        xbox: xbox.to_string(),
-        mojang_auth: mojang_auth.to_string(),
-        mojang_session: mojang_session.to_string(),
-        mojang_api: mojang_api.to_string(),
-        minecraft_api: minecraft_api.to_string(),
+pub async fn get_mcstatus(http: Client) -> ServicesResponse {
+    let (xbox, mojang_session, mojang_api, minecraft_api) = join!(
+        get_xbox(http.clone()),
+        get_session(http.clone()),
+        get_mojang(http.clone()),
+        get_minecraft(http.clone())
+    );
+    ServicesResponse {
+        xbox,
+        mojang_session,
+        mojang_api,
+        minecraft_api,
     }
 }
 
-pub async fn refresh_mcstatus(http: reqwest::Client, resp: Arc<RwLock<ServicesResponse>>) {
-    tokio::time::sleep(std::time::Duration::from_secs(240)).await;
-    get_mcstatus(http, resp).await;
+pub async fn refresh_mcstatus(http: Client, resp: Arc<RwLock<ServicesResponse>>) {
+    loop {
+        let sleep = tokio::time::sleep(std::time::Duration::from_secs(240));
+        select! {
+            _ = sleep => {},
+            _ = vss::shutdown_signal() => break,
+        }
+        let status = get_mcstatus(http.clone()).await;
+        let mut response = resp.write().await;
+        *response = status;
+    }
 }
 
-async fn xbl_test(res: Response) -> Status {
+async fn get_xbox(client: Client) -> Status {
+    let res = match client.get(XBL_STATUS_URL).send().await {
+        Ok(v) => v,
+        Err(e) => return Status::DefiniteProblems(Some(e)),
+    };
     let result = match res.json::<XblStatusResponse>().await {
         Ok(res) => res,
         Err(e) => return Status::PossibleProblems(Some(e)),
@@ -104,13 +92,12 @@ async fn xbl_test(res: Response) -> Status {
     }
     Status::Operational
 }
-async fn mojang_auth_test(res: Response) -> Status {
-    if let Err(e) = res.json::<MojangAuthServerStatus>().await {
-        return Status::PossibleProblems(Some(e));
+
+async fn get_session(client: Client) -> Status {
+    let res = match client.get(MOJANG_SESSIONSERVER_URL).send().await {
+        Ok(v) => v,
+        Err(e) => return Status::DefiniteProblems(Some(e)),
     };
-    Status::Operational
-}
-async fn mojang_session_test(res: Response) -> Status {
     let result = match res.json::<MojangSessionServerStatus>().await {
         Ok(res) => res,
         Err(e) => return Status::PossibleProblems(Some(e)),
@@ -120,7 +107,12 @@ async fn mojang_session_test(res: Response) -> Status {
     }
     Status::Operational
 }
-async fn mojang_api_test(res: Response) -> Status {
+
+async fn get_mojang(client: Client) -> Status {
+    let res = match client.get(MOJANG_API_URL).send().await {
+        Ok(v) => v,
+        Err(e) => return Status::DefiniteProblems(Some(e)),
+    };
     let result = match res.json::<MojangApiStatus>().await {
         Ok(res) => res,
         Err(e) => return Status::PossibleProblems(Some(e)),
@@ -130,35 +122,42 @@ async fn mojang_api_test(res: Response) -> Status {
     }
     Status::Operational
 }
-async fn minecraft_api_test(res: Response) -> Status {
-    if res.json::<MinecraftApiStatus>().await.is_err() {
-        return Status::PossibleProblems(None);
-    }
-    // TODO: Set up MSA with an account so this can be better tested
-    Status::Operational
-}
-enum Status {
-    Operational,
-    PossibleProblems(Option<reqwest::Error>),
-    DefiniteProblems(Option<reqwest::Error>),
-}
 
-impl Display for Status {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Operational => write!(f, "Operational"),
-            Self::PossibleProblems(_) => write!(f, "PossibleProblems"),
-            Self::DefiniteProblems(_) => write!(f, "DefiniteProblems"),
-        }
-    }
-}
+async fn get_minecraft(client: Client) -> Status {
+    let names = ["valkyrie_pilot", "pawlet", "lzaisanerd"];
+    let res = match client
+        .post(MINECRAFT_SERVICES_API_URL)
+        .json(&names)
+        .send()
+        .await
+    {
+        Ok(v) => v,
+        Err(e) => return Status::DefiniteProblems(Some(e)),
+    };
 
-impl Debug for Status {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Operational => write!(f, "Operational"),
-            Self::PossibleProblems(e) => write!(f, "PossibleProblems: {e:?}"),
-            Self::DefiniteProblems(e) => write!(f, "DefiniteProblems: {e:?}"),
-        }
+    let expected = [
+        MinecraftApiStatusEntry {
+            id: "bbb47773bb48438e806b7731b2724e84".to_string(),
+            name: "lzaisanerd".to_string(),
+        },
+        MinecraftApiStatusEntry {
+            id: "c5ff333a8ef3423babac8d0338f731d5".to_string(),
+            name: "pawlet".to_string(),
+        },
+        MinecraftApiStatusEntry {
+            id: "b5dcf182a943402bb75ba057a6508fed".to_string(),
+            name: "valkyrie_pilot".to_string(),
+        },
+    ];
+
+    let mut data = match res.json::<Vec<MinecraftApiStatusEntry>>().await {
+        Ok(v) => v,
+        Err(e) => return Status::PossibleProblems(Some(e)),
+    };
+    data.sort_by(|a, b| a.name.cmp(&b.name));
+    if data.as_slice() == expected {
+        Status::Operational
+    } else {
+        Status::PossibleProblems(None)
     }
 }

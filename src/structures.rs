@@ -1,17 +1,17 @@
-use serde::{Deserialize, Serialize};
+use std::fmt::{Debug, Display};
 
-#[derive(Serialize, Debug, Clone)]
+use serde::{Deserialize, Serialize, Serializer};
+
+#[derive(Serialize, Debug)]
 pub struct ServicesResponse {
     #[serde(rename(serialize = "Xbox services"))]
-    pub xbox: String,
-    #[serde(rename(serialize = "AuthServer"))]
-    pub mojang_auth: String,
+    pub xbox: Status,
     #[serde(rename(serialize = "SessionServer"))]
-    pub mojang_session: String,
+    pub mojang_session: Status,
     #[serde(rename(serialize = "Mojang API"))]
-    pub mojang_api: String,
+    pub mojang_api: Status,
     #[serde(rename(serialize = "Minecraft API"))]
-    pub minecraft_api: String,
+    pub minecraft_api: Status,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -80,26 +80,6 @@ pub struct XblStatusCoreServiceStatus {
 }
 
 #[derive(Deserialize, Clone, Debug)]
-pub struct MojangAuthServerStatus {
-    #[serde(rename(deserialize = "Status"))]
-    pub status: String,
-    #[serde(rename(deserialize = "Runtime-Mode"))]
-    pub runtime_mode: String,
-    #[serde(rename(deserialize = "Application-Author"))]
-    pub application_author: String,
-    #[serde(rename(deserialize = "Application-Description"))]
-    pub application_description: String,
-    #[serde(rename(deserialize = "Specification-Version"))]
-    pub specification_version: String,
-    #[serde(rename(deserialize = "Application-Name"))]
-    pub application_name: String,
-    #[serde(rename(deserialize = "Implementation-Version"))]
-    pub implementation_version: String,
-    #[serde(rename(deserialize = "Application-Owner"))]
-    pub application_owner: String,
-}
-
-#[derive(Deserialize, Clone, Debug)]
 pub struct MojangSessionServerStatus {
     pub id: String,
     pub name: String,
@@ -118,9 +98,10 @@ pub struct MojangApiStatus {
     pub name: String,
 }
 
-#[derive(Deserialize, Clone, Debug)]
-pub struct MinecraftApiStatus {
-    pub path: String,
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+pub struct MinecraftApiStatusEntry {
+    pub id: String,
+    pub name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -164,5 +145,45 @@ impl axum::response::IntoResponse for MCPingResponse {
                 serde_json::to_string(&self).unwrap_or_else(|_| r#"{"error": "Error serializing json! Please make a bug report: https://github.com/randomairborne/mcping/issues"}"#.to_string()),
             ))
             .unwrap()
+    }
+}
+
+pub enum Status {
+    Operational,
+    PossibleProblems(Option<reqwest::Error>),
+    DefiniteProblems(Option<reqwest::Error>),
+}
+
+impl Serialize for Status {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let ser = match self {
+            Status::Operational => "Operational",
+            Status::PossibleProblems(_) => "PossibleProblems",
+            Status::DefiniteProblems(_) => "DefiniteProblems",
+        };
+        serializer.serialize_str(ser)
+    }
+}
+
+impl Display for Status {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Operational => write!(f, "Operational"),
+            Self::PossibleProblems(_) => write!(f, "PossibleProblems"),
+            Self::DefiniteProblems(_) => write!(f, "DefiniteProblems"),
+        }
+    }
+}
+
+impl Debug for Status {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Operational => write!(f, "Operational"),
+            Self::PossibleProblems(e) => write!(f, "PossibleProblems: {e:?}"),
+            Self::DefiniteProblems(e) => write!(f, "DefiniteProblems: {e:?}"),
+        }
     }
 }

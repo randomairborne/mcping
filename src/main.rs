@@ -31,14 +31,8 @@ async fn main() {
         .redirect(reqwest::redirect::Policy::limited(100))
         .build()
         .unwrap();
-    let current_mcstatus: Arc<RwLock<ServicesResponse>> = Arc::new(RwLock::new(ServicesResponse {
-        xbox: String::new(),
-        mojang_auth: String::new(),
-        mojang_session: String::new(),
-        mojang_api: String::new(),
-        minecraft_api: String::new(),
-    }));
-    get_mcstatus(http_client.clone(), Arc::clone(&current_mcstatus)).await;
+    let current_mcstatus: Arc<RwLock<ServicesResponse>> =
+        Arc::new(RwLock::new(get_mcstatus(http_client.clone()).await));
     tokio::spawn(refresh_mcstatus(http_client, Arc::clone(&current_mcstatus)));
     let serve_dir = ServeDir::new(&asset_dir)
         .append_index_html_on_directories(true)
