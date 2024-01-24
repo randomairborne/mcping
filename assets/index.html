@@ -2,6 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/icon.png" />
+    <link rel="stylesheet" href="/index.css" />
     <meta name="viewport" content="width=device-width" />
     <meta
       property="og:title"
@@ -16,78 +18,6 @@
       content="valkyrie_pilot's minecraft server tester. Pings RakNet, Netty, and Legacy servers using SLP, and the Mojang API using reqwest. https://github.com/randomairborne/mcping"
     />
     <title>Minecraft server tester</title>
-    <link rel="icon" type="image/png" href="/icon.png" />
-    <style>
-      @font-face {
-        font-family: "JetBrains Mono";
-        src: url(/jetbrains.woff2);
-      }
-
-      body {
-        text-align: center;
-        background: hsl(200, 4%, 10%);
-        font-family: "JetBrains Mono", monospace;
-        color: #ffffff;
-
-        min-height: 98vh;
-        display: grid;
-        grid-template-rows: auto 1fr auto;
-        overflow-x: hidden;
-      }
-
-      input {
-        background: hsl(192, 2%, 40%);
-        border: #1b8b77;
-        color: #ffffff;
-        padding: 20px;
-        border-radius: 3px;
-      }
-
-      input::placeholder {
-        color: hsl(192, 2%, 70%);
-      }
-
-      a {
-        color: #43baf4;
-      }
-
-      img {
-        image-rendering: crisp-edges;
-        image-rendering: pixelated;
-      }
-
-      button {
-        border: none;
-        border-radius: 5px;
-        padding: 15px;
-        color: white;
-        cursor: pointer;
-        display: inline-block;
-        background-color: #43baf4;
-        text-align: center;
-        text-decoration: none;
-      }
-
-      footer {
-        min-height: 50px;
-        bottom: 0;
-        padding: 10px;
-        width: 100%;
-      }
-
-      .java {
-        background-color: chartreuse;
-        color: black;
-      }
-
-      .bedrock {
-        background-color: black;
-      }
-
-      .response {
-        font-size: 20pt;
-      }
-    </style>
   </head>
 
   <body onload="checkMojangStatus()">

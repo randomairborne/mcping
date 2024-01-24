@@ -2,6 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/icon.png" />
+    <link rel="stylesheet" href="/index.css" />
     <meta name="viewport" content="width=device-width" />
     <meta
       property="og:title"
@@ -16,29 +18,9 @@
       content="valkyrie_pilot's minecraft server testing API. Pings RakNet, Netty, and Legacy servers using SLP, and the Mojang API using reqwest. https://github.com/randomairborne/mcping"
     />
     <title>Minecraft server tester</title>
-    <link rel="icon" type="image/png" href="/icon.png" />
-    <style>
-      @font-face {
-        font-family: "Source Sans Pro";
-        src: url(/jetbrains.woff2);
-      }
-
-      body {
-        text-align: center;
-        background: hsl(200, 4%, 10%);
-        color: white;
-        font-family: "JetBrains Mono", monospace;
-        margin-left: 20%;
-        margin-right: 20%;
-      }
-
-      a {
-        color: #43baf4;
-      }
-    </style>
   </head>
 
-  <body onLoad="loadExampleResponses()">
+  <body onLoad="loadExampleResponses()" id="apiBody">
     <h1>MCping API</h1>
     <p>
       The MCping API is very simple. There is a Java API at /api/java/, and a

@@ -1,0 +1,73 @@
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url(/jetbrains.woff2);
+}
+
+body {
+  text-align: center;
+  background: hsl(200, 4%, 10%);
+  font-family: "JetBrains Mono", monospace;
+  color: #ffffff;
+  min-height: 98vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  overflow-x: hidden;
+}
+
+body#apiBody {
+  margin-left: 20%;
+  margin-right: 20%;
+}
+
+input {
+  background: hsl(192, 2%, 40%);
+  border: #1b8b77;
+  color: #ffffff;
+  padding: 20px;
+  border-radius: 3px;
+}
+
+input::placeholder {
+  color: hsl(192, 2%, 70%);
+}
+
+a {
+  color: #43baf4;
+}
+
+img {
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+button {
+  border: none;
+  border-radius: 5px;
+  padding: 15px;
+  color: white;
+  cursor: pointer;
+  display: inline-block;
+  background-color: #43baf4;
+  text-align: center;
+  text-decoration: none;
+}
+
+footer {
+  min-height: 50px;
+  bottom: 0;
+  padding: 10px;
+  width: 100%;
+}
+
+.java {
+  background-color: chartreuse;
+  color: black;
+}
+
+.bedrock {
+  background-color: black;
+}
+
+.response {
+  font-size: 20pt;
+}
