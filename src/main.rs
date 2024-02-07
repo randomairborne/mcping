@@ -4,6 +4,10 @@ mod structures;
 
 use std::{borrow::Cow, net::SocketAddr, sync::Arc};
 
+use axum::extract::Request;
+use axum::http::{HeaderName, HeaderValue};
+use axum::middleware::Next;
+use axum::response::Response;
 use axum::{extract::Path, http::StatusCode, response::IntoResponse, routing::get};
 use libmcping::{Bedrock, Java};
 use reqwest::header::HeaderMap;
@@ -51,6 +55,7 @@ async fn main() {
         .route("/api/java/:address", get(handle_java_ping))
         .route("/api/bedrock/:address", get(handle_bedrock_ping))
         .route("/api/services", get(services::handle_mcstatus))
+        .layer(axum::middleware::from_fn(noindex))
         .fallback_service(serve_dir)
         .with_state(current_mcstatus);
     let socket_address = SocketAddr::from((
@@ -65,6 +70,14 @@ async fn main() {
         .with_graceful_shutdown(vss::shutdown_signal())
         .await
         .unwrap();
+}
+
+async fn noindex(req: Request, next: Next) -> Response {
+    let mut resp = next.run(req).await;
+    let name = HeaderName::from_static("X-Robots-Tag");
+    let value = HeaderValue::from_static("noindex");
+    resp.headers_mut().insert(name, value);
+    resp
 }
 
 async fn handle_java_ping(Path(address): Path<String>) -> Result<impl IntoResponse, Failure> {
