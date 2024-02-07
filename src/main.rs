@@ -2,6 +2,7 @@
 mod services;
 mod structures;
 
+use std::str::FromStr;
 use std::{borrow::Cow, net::SocketAddr, sync::Arc};
 
 use axum::extract::Request;
@@ -74,8 +75,8 @@ async fn main() {
 
 async fn noindex(req: Request, next: Next) -> Response {
     let mut resp = next.run(req).await;
-    let name = HeaderName::from_static("X-Robots-Tag");
-    let value = HeaderValue::from_static("noindex");
+    let name = HeaderName::from_str("X-Robots-Tag").unwrap();
+    let value = HeaderValue::from_str("noindex").unwrap();
     resp.headers_mut().insert(name, value);
     resp
 }
@@ -190,7 +191,7 @@ impl IntoResponse for Failure {
         axum::response::Response::builder()
             .header(
                 axum::http::header::CONTENT_TYPE,
-                axum::http::HeaderValue::from_static("application/json"),
+                HeaderValue::from_str("application/json").unwrap(),
             )
             .status(status)
             .body(axum::body::Body::new(
