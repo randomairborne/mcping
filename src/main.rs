@@ -2,20 +2,20 @@
 mod services;
 mod structures;
 
-use std::str::FromStr;
-use std::{borrow::Cow, net::SocketAddr, sync::Arc};
+use std::{borrow::Cow, net::SocketAddr, str::FromStr, sync::Arc};
 
-use axum::extract::Request;
-use axum::http::{HeaderName, HeaderValue};
-use axum::middleware::Next;
-use axum::response::Response;
-use axum::{extract::Path, http::StatusCode, response::IntoResponse, routing::get};
+use axum::{
+    extract::{Path, Request},
+    http::{HeaderName, HeaderValue, StatusCode},
+    middleware::Next,
+    response::{IntoResponse, Response},
+    routing::get,
+};
 use libmcping::{Bedrock, Java};
 use reqwest::header::HeaderMap;
 use tokio::{net::TcpListener, sync::RwLock};
 use tower_http::services::ServeDir;
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::util::SubscriberInitExt;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::{
     services::{get_mcstatus, refresh_mcstatus},
@@ -56,7 +56,7 @@ async fn main() {
         .route("/api/java/:address", get(handle_java_ping))
         .route("/api/bedrock/:address", get(handle_bedrock_ping))
         .route("/api/services", get(services::handle_mcstatus))
-        .layer(axum::middleware::from_fn(noindex))
+        .layer(axum::middleware::from_fn(noindex_cache))
         .fallback_service(serve_dir)
         .with_state(current_mcstatus);
     let socket_address = SocketAddr::from((
@@ -72,12 +72,18 @@ async fn main() {
         .await
         .unwrap();
 }
+static ROBOTS_NAME: HeaderName = HeaderName::from_static("X-Robots-Tag");
+static ROBOTS_VALUE: HeaderValue = HeaderValue::from_static("noindex");
+static CACHE_CONTROL_NOSTORE: HeaderValue = HeaderValue::from_static("s-maxage=10");
 
-async fn noindex(req: Request, next: Next) -> Response {
+async fn noindex_cache(req: Request, next: Next) -> Response {
     let mut resp = next.run(req).await;
-    let name = HeaderName::from_str("X-Robots-Tag").unwrap();
-    let value = HeaderValue::from_str("noindex").unwrap();
-    resp.headers_mut().insert(name, value);
+    resp.headers_mut()
+        .insert(ROBOTS_NAME.clone(), ROBOTS_VALUE.clone());
+    resp.headers_mut().insert(
+        axum::http::header::CACHE_CONTROL,
+        CACHE_CONTROL_NOSTORE.clone(),
+    );
     resp
 }
 
