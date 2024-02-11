@@ -2,7 +2,7 @@
 mod services;
 mod structures;
 
-use std::{borrow::Cow, net::SocketAddr, str::FromStr, sync::Arc};
+use std::{borrow::Cow, net::SocketAddr, sync::Arc};
 
 use axum::{
     extract::{Path, Request},
@@ -72,7 +72,7 @@ async fn main() {
         .await
         .unwrap();
 }
-static ROBOTS_NAME: HeaderName = HeaderName::from_static("X-Robots-Tag");
+static ROBOTS_NAME: HeaderName = HeaderName::from_static("x-robots-tag");
 static ROBOTS_VALUE: HeaderValue = HeaderValue::from_static("noindex");
 static CACHE_CONTROL_NOSTORE: HeaderValue = HeaderValue::from_static("s-maxage=10");
 
