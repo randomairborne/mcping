@@ -74,7 +74,7 @@ async fn main() {
 }
 static ROBOTS_NAME: HeaderName = HeaderName::from_static("x-robots-tag");
 static ROBOTS_VALUE: HeaderValue = HeaderValue::from_static("noindex");
-static CACHE_CONTROL_NOSTORE: HeaderValue = HeaderValue::from_static("s-maxage=10");
+static CACHE_CONTROL_NOSTORE: HeaderValue = HeaderValue::from_static("s-maxage=30");
 
 async fn noindex_cache(req: Request, next: Next) -> Response {
     let mut resp = next.run(req).await;
