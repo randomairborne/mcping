@@ -74,16 +74,14 @@ async fn main() {
 }
 static ROBOTS_NAME: HeaderName = HeaderName::from_static("x-robots-tag");
 static ROBOTS_VALUE: HeaderValue = HeaderValue::from_static("noindex");
-static CACHE_CONTROL_NOSTORE: HeaderValue = HeaderValue::from_static("s-maxage=30");
+static CACHE_CONTROL_AGE: HeaderValue = HeaderValue::from_static("s-maxage=30");
 
 async fn noindex_cache(req: Request, next: Next) -> Response {
     let mut resp = next.run(req).await;
     resp.headers_mut()
         .insert(ROBOTS_NAME.clone(), ROBOTS_VALUE.clone());
-    resp.headers_mut().insert(
-        axum::http::header::CACHE_CONTROL,
-        CACHE_CONTROL_NOSTORE.clone(),
-    );
+    resp.headers_mut()
+        .insert(axum::http::header::CACHE_CONTROL, CACHE_CONTROL_AGE.clone());
     resp
 }
 
