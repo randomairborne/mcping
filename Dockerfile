@@ -1,10 +1,8 @@
-FROM alpine AS client-builder
+FROM ghcr.io/randomairborne/asset-squisher AS client-builder
 
-RUN apk add zstd brotli pigz
+COPY /assets/ /uncompressed-assets/
 
-COPY /assets/ /assets/
-
-RUN find /assets/ -type f ! -name "*.png" -exec pigz -k9 '{}' \; -exec pigz -zk9 '{}' \; -exec brotli -k9 '{}' \; -exec zstd -qk19 '{}' \;
+RUN asset-squisher /uncompressed-assets/ /assets/
 
 FROM rust:alpine AS server-builder
 
