@@ -145,7 +145,7 @@ async fn get_minecraft(client: Client) -> Status {
     let expected = [
         MinecraftApiStatusEntry {
             id: "bbb47773bb48438e806b7731b2724e84".to_string(),
-            name: "lzaisanerd".to_string(),
+            name: "mcping_me".to_string(),
         },
         MinecraftApiStatusEntry {
             id: "c5ff333a8ef3423babac8d0338f731d5".to_string(),
