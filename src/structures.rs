@@ -148,9 +148,9 @@ impl Serialize for Status {
         S: Serializer,
     {
         let ser = match self {
-            Status::Operational => "Operational",
-            Status::PossibleProblems(_) => "PossibleProblems",
-            Status::DefiniteProblems(_) => "DefiniteProblems",
+            Self::Operational => "Operational",
+            Self::PossibleProblems(_) => "PossibleProblems",
+            Self::DefiniteProblems(_) => "DefiniteProblems",
         };
         serializer.serialize_str(ser)
     }

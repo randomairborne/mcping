@@ -2,7 +2,7 @@
 mod services;
 mod structures;
 
-use std::{borrow::Cow, net::SocketAddr, sync::Arc};
+use std::{borrow::Cow, net::SocketAddr, sync::Arc, time::Duration};
 
 use axum::{
     extract::{Path, Request},
@@ -12,7 +12,7 @@ use axum::{
     routing::get,
 };
 use libmcping::{Bedrock, Java};
-use reqwest::header::HeaderMap;
+use reqwest::{header::HeaderMap, redirect::Policy, Client};
 use tokio::{net::TcpListener, sync::RwLock};
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -31,15 +31,15 @@ async fn main() {
     let asset_dir = std::env::var("ASSET_DIR").unwrap_or_else(|_| "./assets/".to_owned());
     let mut default_headers = HeaderMap::new();
     default_headers.insert("Accept", "application/json".parse().unwrap());
-    let http_client = reqwest::Client::builder()
-        .connect_timeout(std::time::Duration::from_secs(10))
+    let http_client = Client::builder()
+        .connect_timeout(Duration::from_secs(10))
         .default_headers(default_headers)
         .user_agent(concat!(
             "minecraftserviceschecker/",
             env!("CARGO_PKG_VERSION"),
             " (https://github.com/randomairborne/mcping)"
         ))
-        .redirect(reqwest::redirect::Policy::limited(100))
+        .redirect(Policy::limited(100))
         .build()
         .unwrap();
     let current_mcstatus: Arc<RwLock<ServicesResponse>> =
@@ -88,7 +88,7 @@ async fn noindex_cache(req: Request, next: Next) -> Response {
 async fn handle_java_ping(Path(address): Path<String>) -> Result<impl IntoResponse, Failure> {
     let (latency, response) = match libmcping::tokio::get_status(Java {
         server_address: address,
-        timeout: Some(std::time::Duration::from_secs(5)),
+        timeout: Some(Duration::from_secs(5)),
     })
     .await
     {
@@ -123,9 +123,9 @@ async fn handle_java_ping(Path(address): Path<String>) -> Result<impl IntoRespon
 async fn handle_bedrock_ping(Path(address): Path<String>) -> Result<impl IntoResponse, Failure> {
     let (latency, response) = match libmcping::tokio::get_status(Bedrock {
         server_address: address,
-        timeout: Some(std::time::Duration::from_secs(5)),
+        timeout: Some(Duration::from_secs(5)),
         tries: 5,
-        wait_to_try: Some(std::time::Duration::from_millis(100)),
+        wait_to_try: Some(Duration::from_millis(100)),
         ..Default::default()
     })
     .await
@@ -149,32 +149,18 @@ async fn handle_bedrock_ping(Path(address): Path<String>) -> Result<impl IntoRes
     })
 }
 
+#[derive(thiserror::Error, Debug)]
 pub enum Failure {
-    ConnectionFailed(libmcping::Error),
-    StatusReqwestFailed(reqwest::Error),
-    JsonSerializationFailed(serde_json::Error),
-}
-
-impl From<libmcping::Error> for Failure {
-    fn from(e: libmcping::Error) -> Self {
-        Self::ConnectionFailed(e)
-    }
-}
-
-impl From<reqwest::Error> for Failure {
-    fn from(e: reqwest::Error) -> Self {
-        Self::StatusReqwestFailed(e)
-    }
-}
-
-impl From<serde_json::Error> for Failure {
-    fn from(e: serde_json::Error) -> Self {
-        Self::JsonSerializationFailed(e)
-    }
+    #[error("Minecraft connection error")]
+    ConnectionFailed(#[from] libmcping::Error),
+    #[error("HTTP error")]
+    StatusReqwestFailed(#[from] reqwest::Error),
+    #[error("JSON serialization error")]
+    JsonSerializationFailed(#[from] serde_json::Error),
 }
 
 impl IntoResponse for Failure {
-    fn into_response(self) -> axum::response::Response {
+    fn into_response(self) -> Response {
         let (error, status): (Cow<str>, StatusCode) = match self {
             Self::ConnectionFailed(e) => (
                 format!("Error connecting to the server: {e}").into(),

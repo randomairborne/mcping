@@ -55,8 +55,8 @@ pub async fn refresh_mcstatus(http: Client, resp: Arc<RwLock<ServicesResponse>>)
     loop {
         let sleep = tokio::time::sleep(std::time::Duration::from_secs(240));
         select! {
-            _ = sleep => {},
-            _ = vss::shutdown_signal() => break,
+            () = sleep => {},
+            () = vss::shutdown_signal() => break,
         }
         let status = get_mcstatus(http.clone()).await;
         let mut response = resp.write().await;
