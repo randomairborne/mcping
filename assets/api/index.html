@@ -49,10 +49,12 @@
       There is also a Mojang Services API, at
       <a href="/api/services">/api/services</a>. This is useful for checking if
       the authservers or Xbox Services are having issues. Example response
-      below. The possible values for each field are DefiniteProblems,
-      PossibleProblems, and Operational.
+      below. The possible values for each field are
+      <code>DefiniteProblems</code>, <code>PossibleProblems</code>, and
+      <code>Operational</code>.
     </p>
-    <pre><code id="exampleServicesResponse" class="language-json" style="text-align: left; display: inline-block;"></code></pre>
+    <pre><code id="exampleServicesResponse" class="language-json"
+           style="text-align: left; display: inline-block;"></code></pre>
   </body>
   <script src="/hljs/highlight.min.js"></script>
   <script>
@@ -72,6 +74,7 @@
         services_string,
       ).innerHTML;
     }
+
     loadExampleResponses().then(() => {
       hljs.highlightAll();
     });
