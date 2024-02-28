@@ -13,8 +13,8 @@ use crate::{
 };
 
 const MOJANG_SESSIONSERVER_URL: &str =
-    "https://sessionserver.mojang.com/session/minecraft/profile/b5dcf182a943402bb75ba057a6508fed";
-const MOJANG_API_URL: &str = "https://api.mojang.com/users/profiles/minecraft/valkyrie_pilot";
+    "https://sessionserver.mojang.com/session/minecraft/profile/bbb47773bb48438e806b7731b2724e84";
+const MOJANG_API_URL: &str = "https://api.mojang.com/users/profiles/minecraft/mcping_me";
 const MINECRAFT_SERVICES_API_URL: &str =
     "https://api.minecraftservices.com/minecraft/profile/lookup/bulk/byname";
 const XBL_STATUS_URL: &str = "https://xnotify.xboxlive.com/servicestatusv6/US/en-US";
@@ -109,7 +109,7 @@ async fn get_session(client: Client) -> Status {
         Ok(res) => res,
         Err(e) => return Status::PossibleProblems(Some(e)),
     };
-    if result.name != "valkyrie_pilot" {
+    if result.name != "mcping_me" {
         return Status::DefiniteProblems(None);
     }
     Status::Operational
@@ -124,14 +124,14 @@ async fn get_mojang(client: Client) -> Status {
         Ok(res) => res,
         Err(e) => return Status::PossibleProblems(Some(e)),
     };
-    if result.id != "b5dcf182a943402bb75ba057a6508fed" {
+    if result.id != "bbb47773bb48438e806b7731b2724e84" {
         return Status::DefiniteProblems(None);
     }
     Status::Operational
 }
 
 async fn get_minecraft(client: Client) -> Status {
-    let names = ["valkyrie_pilot", "pawlet", "lzaisanerd"];
+    let names = ["valkyrie_pilot", "pawlet", "mcping_me"];
     let res = match client
         .post(MINECRAFT_SERVICES_API_URL)
         .json(&names)
