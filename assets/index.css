@@ -71,3 +71,7 @@ footer {
 .response {
   font-size: 20pt;
 }
+
+.ip {
+  cursor: pointer;
+}

@@ -29,23 +29,29 @@
       <h1>This website unfortunately requires JavaScript.</h1>
     </noscript>
     <h1>Minecraft server tester</h1>
-    <div id="select">
-      <input id="address" placeholder="Server address" />
+    <div id="select-ping">
+      <input id="address-entry" placeholder="Server address" />
       <br />
       <br />
-      <button id="ping" onclick="doPing('/api/java/')" class="java">
+      <button id="java-btn" onclick="doPing('/api/java/')" class="java">
         Ping Java
       </button>
-      <button id="bedrock" onclick="doPing('/api/bedrock/')" class="bedrock">
+      <button
+        id="bedrock-btn"
+        onclick="doPing('/api/bedrock/')"
+        class="bedrock"
+      >
         Ping Bedrock
       </button>
       <br />
       <br />
-      Your IP: <span id="ip"></span>
+      <span id="ip-descriptor" class="ip">Your IP:</span>
+      <span id="ip-msg" class="ip">Click to Reveal</span>
+      <span id="user-ip" class="ip" hidden></span>
       <br />
-      <div id="status"></div>
+      <div id="server-status"></div>
     </div>
-    <div class="response" id="response" style="display: none">
+    <div class="server-response" id="server-response" hidden>
       <img
         id="favicon"
         height="256"
@@ -54,48 +60,59 @@
         src="/icon.png"
       /><br />
       Server online!
-      <div id="latency"></div>
-      <div id="players"></div>
-      <div id="version"></div>
+      <div id="server-latency"></div>
+      <div id="server-players"></div>
+      <div id="server-version"></div>
       <br />
-      <div id="motd"></div>
-      <div id="mods-container" style="display: none">
-        <br />
-        <div id="mods"></div>
-        <br />
-      </div>
+      <div id="server-motd"></div>
       <br />
       <button onclick="window.location.reload()">Ping Another</button>
     </div>
-    <br id="special-break" style="display: none" />
+    <br id="special-break" hidden />
     <a href="/api/">API</a>
     <footer>
       Mojang API status:
-      <div id="apistatus"></div>
+      <div id="api-status"></div>
     </footer>
   </body>
   <script>
-    const statusElement = document.getElementById("status");
-    const playersElement = document.getElementById("players");
-    const faviconElement = document.getElementById("favicon");
-    const latencyElement = document.getElementById("latency");
-    const versionElement = document.getElementById("version");
-    const ipElement = document.getElementById("ip");
-    const motdElement = document.getElementById("motd");
+    const serverStatusElement = document.getElementById("server-status");
+    const apiStatusElement = document.getElementById("api-status");
+    const playersElement = document.getElementById("server-players");
+    const faviconElement = document.getElementById("server-favicon");
+    const latencyElement = document.getElementById("server-latency");
+    const versionElement = document.getElementById("server-version");
+    const ipElement = document.getElementById("user-ip");
+    const ipMsgElement = document.getElementById("ip-msg");
+    const ipDescriptorElement = document.getElementById("ip-descriptor");
+    const motdElement = document.getElementById("server-motd");
     const specialBreak = document.getElementById("special-break");
+    const addressEntry = document.getElementById("address-entry");
+    const selectElement = document.getElementById("select-ping");
+    const responseElement = document.getElementById("server-response");
+
     fetch("https://v4.giveip.io/raw")
-      .then((response) => response.text())
-      .then((s) => (ipElement.innerText = s));
+      .then((rsp) => rsp.text())
+      .then((s) => (ipElement.innerText = s.trim()));
+
+    function ipClick() {
+      ipElement.hidden = !ipElement.hidden;
+      ipMsgElement.hidden = !ipMsgElement.hidden;
+    }
+
+    ipElement.addEventListener("click", ipClick);
+    ipMsgElement.addEventListener("click", ipClick);
+    ipDescriptorElement.addEventListener("click", ipClick);
 
     async function doPing(apiLocation) {
-      let address = document.getElementById("address").value;
-      specialBreak.style.display = null;
-      statusElement.innerHTML = "Pinging...";
+      let address = addressEntry.value;
+      specialBreak.hidden = false;
+      serverStatusElement.innerHTML = "Pinging...";
       let response = await fetch(apiLocation + address, {}).then((response) =>
         response.json(),
       );
       if (response["error"] !== undefined) {
-        statusElement.innerText = response["error"];
+        serverStatusElement.innerText = response["error"];
         return;
       }
       if (response["icon"] === "" || response["icon"] === undefined) {
@@ -114,16 +131,17 @@
       versionElement.innerHTML = mineParse(
         response["version"]["broadcast"],
       ).raw;
-      document.getElementById("select").style.display = "none";
-      document.getElementById("response").style.display = null;
+      selectElement.hidden = true;
+      responseElement.hidden = false;
     }
-  </script>
-  <script>
+
     async function checkMojangStatus() {
       let response = await fetch("/api/services", {}).then((response) =>
         response.json(),
       );
-      let status = "| ";
+      let status = "";
+      let counter = 0;
+      const lastIndex = Object.keys(response).length - 1;
       for (const key in response) {
         status = status + key + ": ";
         switch (response[key]) {
@@ -143,12 +161,14 @@
             status = status + '<span style="color:aqua">?</span>';
           }
         }
-        status = status + " | ";
+        if (counter < lastIndex) {
+          status = status + " | ";
+        }
+        counter++;
       }
-      document.getElementById("apistatus").innerHTML = status;
+      apiStatusElement.innerHTML = status;
     }
-  </script>
-  <script>
+
     (function () {
       "use strict";
 
