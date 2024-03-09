@@ -24,7 +24,7 @@
     <title>Minecraft server tester</title>
   </head>
 
-  <body onload="checkMojangStatus()">
+  <body>
     <noscript>
       <h1>This website unfortunately requires JavaScript.</h1>
     </noscript>
@@ -33,16 +33,8 @@
       <input id="address-entry" placeholder="Server address" />
       <br />
       <br />
-      <button id="java-btn" onclick="doPing('/api/java/')" class="java">
-        Ping Java
-      </button>
-      <button
-        id="bedrock-btn"
-        onclick="doPing('/api/bedrock/')"
-        class="bedrock"
-      >
-        Ping Bedrock
-      </button>
+      <button id="java-btn" class="java">Ping Java</button>
+      <button id="bedrock-btn" class="bedrock">Ping Bedrock</button>
       <br />
       <br />
       <span id="ip-descriptor" class="ip">Your IP:</span>
@@ -66,7 +58,7 @@
       <br />
       <div id="server-motd"></div>
       <br />
-      <button onclick="window.location.reload()">Ping Another</button>
+      <button id="reset-ping">Ping Another</button>
     </div>
     <br id="special-break" hidden />
     <a href="/api/">API</a>
@@ -90,6 +82,9 @@
     const addressEntry = document.getElementById("address-entry");
     const selectElement = document.getElementById("select-ping");
     const responseElement = document.getElementById("server-response");
+    const resetPingElement = document.getElementById("reset-ping");
+    const javaTriggerElement = document.getElementById("java-btn");
+    const bedrockTriggerElement = document.getElementById("bedrock-btn");
 
     fetch("https://v4.giveip.io/raw")
       .then((rsp) => rsp.text())
@@ -103,6 +98,19 @@
     ipElement.addEventListener("click", ipClick);
     ipMsgElement.addEventListener("click", ipClick);
     ipDescriptorElement.addEventListener("click", ipClick);
+    resetPingElement.addEventListener("click", function (_) {
+      window.location.reload();
+    });
+    javaTriggerElement.addEventListener("click", function (_) {
+      doPing("/api/java/");
+    });
+    bedrockTriggerElement.addEventListener("click", function (_) {
+      doPing("/api/bedrock/");
+    });
+
+    document.addEventListener("load", function (_) {
+      checkMojangStatus().then(() => {});
+    });
 
     async function doPing(apiLocation) {
       let address = addressEntry.value;
