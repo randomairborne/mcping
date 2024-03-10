@@ -89,7 +89,8 @@ async fn noindex_cache(req: Request, next: Next) -> Response {
 async fn handle_java_ping(Path(address): Path<String>) -> Result<Json<MCPingResponse>, Failure> {
     let (latency, response) = libmcping::tokio::get_status(Java {
         server_address: address,
-        timeout: Some(Duration::from_secs(5)),
+        // FIXME: this field is a filthy lie
+        timeout: Some(Duration::from_secs(1)),
     })
     .await
     .map_err(Failure::ConnectionFailed)?;
