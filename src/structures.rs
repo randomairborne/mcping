@@ -121,21 +121,6 @@ pub struct PlayerSample {
     pub name: String,
 }
 
-impl axum::response::IntoResponse for MCPingResponse {
-    fn into_response(self) -> axum::response::Response {
-        axum::response::Response::builder()
-            .header(
-                axum::http::header::CONTENT_TYPE,
-                axum::http::HeaderValue::from_static("application/json"),
-            )
-            .status(axum::http::StatusCode::OK)
-            .body(axum::body::Body::from(
-                serde_json::to_string(&self).unwrap_or_else(|_| r#"{"error": "Error serializing json! Please make a bug report: https://github.com/randomairborne/mcping/issues"}"#.to_string()),
-            ))
-            .unwrap()
-    }
-}
-
 pub enum Status {
     Operational,
     PossibleProblems(Option<reqwest::Error>),

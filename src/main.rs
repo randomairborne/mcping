@@ -2,17 +2,21 @@
 mod services;
 mod structures;
 
-use std::{borrow::Cow, net::SocketAddr, sync::Arc, time::Duration};
+use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use axum::{
     extract::{Path, Request},
-    http::{HeaderName, HeaderValue, StatusCode},
+    http::{
+        header::{CACHE_CONTROL, CONTENT_TYPE},
+        HeaderName, HeaderValue, StatusCode,
+    },
     middleware::Next,
     response::{IntoResponse, Response},
     routing::get,
 };
 use libmcping::{Bedrock, Java};
 use reqwest::{header::HeaderMap, redirect::Policy, Client};
+use serde::Serialize;
 use tokio::{net::TcpListener, sync::RwLock};
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -81,20 +85,17 @@ async fn noindex_cache(req: Request, next: Next) -> Response {
     resp.headers_mut()
         .insert(ROBOTS_NAME.clone(), ROBOTS_VALUE.clone());
     resp.headers_mut()
-        .insert(axum::http::header::CACHE_CONTROL, CACHE_CONTROL_AGE.clone());
+        .insert(CACHE_CONTROL, CACHE_CONTROL_AGE.clone());
     resp
 }
 
-async fn handle_java_ping(Path(address): Path<String>) -> Result<impl IntoResponse, Failure> {
-    let (latency, response) = match libmcping::tokio::get_status(Java {
+async fn handle_java_ping(Path(address): Path<String>) -> Result<Json<MCPingResponse>, Failure> {
+    let (latency, response) = libmcping::tokio::get_status(Java {
         server_address: address,
         timeout: Some(Duration::from_secs(5)),
     })
     .await
-    {
-        Ok(ok) => ok,
-        Err(e) => return Err(Failure::ConnectionFailed(e)),
-    };
+    .map_err(Failure::ConnectionFailed)?;
     let mut player_sample: Vec<PlayerSample> = Vec::new();
     if let Some(sample) = response.players.sample {
         for player in sample {
@@ -104,7 +105,7 @@ async fn handle_java_ping(Path(address): Path<String>) -> Result<impl IntoRespon
             });
         }
     }
-    Ok(MCPingResponse {
+    Ok(Json(MCPingResponse {
         latency,
         players: Players {
             online: response.players.online,
@@ -117,11 +118,11 @@ async fn handle_java_ping(Path(address): Path<String>) -> Result<impl IntoRespon
             protocol: response.version.protocol,
             broadcast: response.version.name,
         },
-    })
+    }))
 }
 
-async fn handle_bedrock_ping(Path(address): Path<String>) -> Result<impl IntoResponse, Failure> {
-    let (latency, response) = match libmcping::tokio::get_status(Bedrock {
+async fn handle_bedrock_ping(Path(address): Path<String>) -> Result<Json<MCPingResponse>, Failure> {
+    let (latency, response) = libmcping::tokio::get_status(Bedrock {
         server_address: address,
         timeout: Some(Duration::from_secs(5)),
         tries: 5,
@@ -129,11 +130,8 @@ async fn handle_bedrock_ping(Path(address): Path<String>) -> Result<impl IntoRes
         ..Default::default()
     })
     .await
-    {
-        Ok(ok) => ok,
-        Err(e) => return Err(Failure::ConnectionFailed(e)),
-    };
-    Ok(MCPingResponse {
+    .map_err(Failure::ConnectionFailed)?;
+    Ok(Json(MCPingResponse {
         latency,
         players: Players {
             online: response.players_online.unwrap_or(-1),
@@ -146,48 +144,53 @@ async fn handle_bedrock_ping(Path(address): Path<String>) -> Result<impl IntoRes
             protocol: response.protocol_version.unwrap_or(-1),
             broadcast: response.version_name,
         },
-    })
+    }))
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum Failure {
-    #[error("Minecraft connection error")]
+    #[error("Error connecting to the server")]
     ConnectionFailed(#[from] libmcping::Error),
     #[error("HTTP error")]
     StatusReqwestFailed(#[from] reqwest::Error),
-    #[error("JSON serialization error")]
-    JsonSerializationFailed(#[from] serde_json::Error),
+    #[error("JSON processing error")]
+    JsonProcessingFailed(#[from] serde_json::Error),
 }
 
 impl IntoResponse for Failure {
     fn into_response(self) -> Response {
-        let (error, status): (Cow<str>, StatusCode) = match self {
-            Self::ConnectionFailed(e) => (
-                format!("Error connecting to the server: {e}").into(),
-                StatusCode::OK,
-            ),
-            Self::StatusReqwestFailed(e) => (
-                format!("Error connecting to the Xbox or Mojang API: {e}").into(),
-                StatusCode::BAD_GATEWAY,
-            ),
-            Self::JsonSerializationFailed(e) => (
-                format!("Error serializing JSON: {e}").into(),
-                StatusCode::INTERNAL_SERVER_ERROR,
-            ),
+        let status = match self {
+            Self::ConnectionFailed(_) => StatusCode::OK,
+            Self::StatusReqwestFailed(_) => StatusCode::BAD_GATEWAY,
+            Self::JsonProcessingFailed(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
-        if status == StatusCode::INTERNAL_SERVER_ERROR {
-            println!("Error processing request: {error}");
+        if status != StatusCode::INTERNAL_SERVER_ERROR {
+            error!(error = ?self, "Error processing request");
         }
-        axum::response::Response::builder()
-            .header(
-                axum::http::header::CONTENT_TYPE,
-                HeaderValue::from_str("application/json").unwrap(),
-            )
-            .status(status)
-            .body(axum::body::Body::new(
-                serde_json::json!({ "error": error }).to_string(),
-            ))
-            .unwrap()
+        let ser = ErrorSerialization {
+            error: self.to_string(),
+        };
+        (status, Json(ser)).into_response()
+    }
+}
+
+#[derive(serde::Serialize)]
+pub struct ErrorSerialization {
+    error: String,
+}
+
+pub struct Json<T: Serialize>(pub T);
+
+impl<T: Serialize> IntoResponse for Json<T> {
+    fn into_response(self) -> Response {
+        static JSON_CTYPE: HeaderValue = HeaderValue::from_static("application/json;charset=utf-8");
+
+        let body = serde_json::to_vec_pretty(&self.0).unwrap_or_else(|_| {
+            r#"{"error": "JSON Serialization failed, please make a bug report"}"#
+                .as_bytes()
+                .to_vec()
+        });
+        ([(CONTENT_TYPE, JSON_CTYPE.clone())], body).into_response()
     }
 }
 
