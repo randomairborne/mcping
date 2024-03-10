@@ -33,6 +33,10 @@ extern crate tracing;
 async fn main() {
     start_tracing();
     let asset_dir = std::env::var("ASSET_DIR").unwrap_or_else(|_| "./assets/".to_owned());
+    let port = std::env::var("PORT")
+        .unwrap_or_else(|_| 8080.to_string())
+        .parse::<u16>()
+        .unwrap();
     let mut default_headers = HeaderMap::new();
     default_headers.insert("Accept", "application/json".parse().unwrap());
     let http_client = Client::builder()
@@ -63,13 +67,7 @@ async fn main() {
         .layer(axum::middleware::from_fn(noindex_cache))
         .fallback_service(serve_dir)
         .with_state(current_mcstatus);
-    let socket_address = SocketAddr::from((
-        [0, 0, 0, 0],
-        std::env::var("PORT")
-            .unwrap_or_else(|_| 8080.to_string())
-            .parse::<u16>()
-            .unwrap(),
-    ));
+    let socket_address = SocketAddr::from(([0, 0, 0, 0], port));
     let tcp = TcpListener::bind(socket_address).await.unwrap();
     axum::serve(tcp, app)
         .with_graceful_shutdown(vss::shutdown_signal())
