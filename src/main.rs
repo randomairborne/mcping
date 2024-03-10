@@ -17,7 +17,7 @@ use axum::{
 use libmcping::{Bedrock, Java};
 use reqwest::{header::HeaderMap, redirect::Policy, Client};
 use serde::Serialize;
-use tokio::{net::TcpListener, sync::RwLock};
+use tokio::{net::TcpListener, select, sync::RwLock};
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -87,13 +87,16 @@ async fn noindex_cache(req: Request, next: Next) -> Response {
 }
 
 async fn handle_java_ping(Path(address): Path<String>) -> Result<Json<MCPingResponse>, Failure> {
-    let (latency, response) = libmcping::tokio::get_status(Java {
+    let ping_future = libmcping::tokio::get_status(Java {
         server_address: address,
-        // FIXME: this field is a filthy lie
         timeout: Some(Duration::from_secs(1)),
-    })
-    .await
-    .map_err(Failure::ConnectionFailed)?;
+    });
+    let sleep_future = tokio::time::sleep(Duration::from_secs(5));
+    #[allow(clippy::redundant_pub_crate)]
+    let (latency, response) = select! {
+        val = ping_future => val?,
+        _ = sleep_future => return Err(Failure::TimedOut),
+    };
     let mut player_sample: Vec<PlayerSample> = Vec::new();
     if let Some(sample) = response.players.sample {
         for player in sample {
@@ -149,6 +152,8 @@ async fn handle_bedrock_ping(Path(address): Path<String>) -> Result<Json<MCPingR
 pub enum Failure {
     #[error("Error connecting to the server")]
     ConnectionFailed(#[from] libmcping::Error),
+    #[error("Timed out connecting to the server")]
+    TimedOut,
     #[error("HTTP error")]
     StatusReqwestFailed(#[from] reqwest::Error),
     #[error("JSON processing error")]
@@ -158,7 +163,7 @@ pub enum Failure {
 impl IntoResponse for Failure {
     fn into_response(self) -> Response {
         let status = match self {
-            Self::ConnectionFailed(_) => StatusCode::OK,
+            Self::ConnectionFailed(_) | Self::TimedOut => StatusCode::OK,
             Self::StatusReqwestFailed(_) => StatusCode::BAD_GATEWAY,
             Self::JsonProcessingFailed(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
