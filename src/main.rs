@@ -29,14 +29,13 @@ use crate::{
 #[macro_use]
 extern crate tracing;
 
+const DEFAULT_PORT: u16 = 8080;
+
 #[tokio::main]
 async fn main() {
     start_tracing();
     let asset_dir = std::env::var("ASSET_DIR").unwrap_or_else(|_| "./assets/".to_owned());
-    let port = std::env::var("PORT")
-        .unwrap_or_else(|_| 8080.to_string())
-        .parse::<u16>()
-        .unwrap();
+    let port: u16 = std::env::var("PORT").map_or(DEFAULT_PORT, |v| v.parse().unwrap());
     let mut default_headers = HeaderMap::new();
     default_headers.insert("Accept", "application/json".parse().unwrap());
     let http_client = Client::builder()
