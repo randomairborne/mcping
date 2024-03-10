@@ -36,7 +36,7 @@ pub async fn get_mcstatus(http: Client) -> ServicesResponse {
         get_mojang(http.clone()),
         get_minecraft(http.clone())
     );
-    trace!(
+    debug!(
         ?xbox,
         ?mojang_session,
         ?mojang_api,
@@ -148,12 +148,12 @@ async fn get_minecraft(client: Client) -> Status {
             name: "mcping_me".to_string(),
         },
         MinecraftApiStatusEntry {
-            id: "b5dcf182a943402bb75ba057a6508fed".to_string(),
-            name: "valkyrie_pilot".to_string(),
-        },
-        MinecraftApiStatusEntry {
             id: "c5ff333a8ef3423babac8d0338f731d5".to_string(),
             name: "pawlet".to_string(),
+        },
+        MinecraftApiStatusEntry {
+            id: "b5dcf182a943402bb75ba057a6508fed".to_string(),
+            name: "valkyrie_pilot".to_string(),
         },
     ];
 
@@ -162,6 +162,7 @@ async fn get_minecraft(client: Client) -> Status {
         Err(e) => return Status::PossibleProblems(Some(e)),
     };
     data.sort_by(|a, b| a.name.cmp(&b.name));
+    trace!(expected = ?expected, data = ?data, "Got Minecraft API data");
     if data.as_slice() == expected {
         Status::Operational
     } else {
