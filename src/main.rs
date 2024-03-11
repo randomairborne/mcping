@@ -15,9 +15,10 @@ use axum::{
     routing::get,
 };
 use libmcping::{Bedrock, Java};
+use parking_lot::RwLock;
 use reqwest::{header::HeaderMap, redirect::Policy, Client};
 use serde::Serialize;
-use tokio::{net::TcpListener, select, sync::RwLock};
+use tokio::{net::TcpListener, select};
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 

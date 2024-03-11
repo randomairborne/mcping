@@ -2,7 +2,7 @@ use std::fmt::{Debug, Display};
 
 use serde::{Deserialize, Serialize, Serializer};
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone, Copy)]
 pub struct ServicesResponse {
     #[serde(rename(serialize = "Xbox services"))]
     pub xbox: Status,
@@ -121,10 +121,11 @@ pub struct PlayerSample {
     pub name: String,
 }
 
+#[derive(Clone, Copy, Debug)]
 pub enum Status {
     Operational,
-    PossibleProblems(Option<reqwest::Error>),
-    DefiniteProblems(Option<reqwest::Error>),
+    PossibleProblems,
+    DefiniteProblems,
 }
 
 impl Serialize for Status {
@@ -132,12 +133,7 @@ impl Serialize for Status {
     where
         S: Serializer,
     {
-        let ser = match self {
-            Self::Operational => "Operational",
-            Self::PossibleProblems(_) => "PossibleProblems",
-            Self::DefiniteProblems(_) => "DefiniteProblems",
-        };
-        serializer.serialize_str(ser)
+        serializer.serialize_str(&self.to_string())
     }
 }
 
@@ -145,18 +141,8 @@ impl Display for Status {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Operational => write!(f, "Operational"),
-            Self::PossibleProblems(_) => write!(f, "PossibleProblems"),
-            Self::DefiniteProblems(_) => write!(f, "DefiniteProblems"),
-        }
-    }
-}
-
-impl Debug for Status {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Operational => write!(f, "Operational"),
-            Self::PossibleProblems(e) => write!(f, "PossibleProblems: {e:?}"),
-            Self::DefiniteProblems(e) => write!(f, "DefiniteProblems: {e:?}"),
+            Self::PossibleProblems => write!(f, "PossibleProblems"),
+            Self::DefiniteProblems => write!(f, "DefiniteProblems"),
         }
     }
 }

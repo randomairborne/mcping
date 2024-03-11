@@ -1,15 +1,16 @@
 use std::sync::Arc;
 
-use axum::{extract::State, response::IntoResponse};
+use axum::extract::State;
+use parking_lot::RwLock;
 use reqwest::Client;
-use tokio::{join, select, sync::RwLock};
+use tokio::{join, select};
 
 use crate::{
     structures::{
         MinecraftApiStatusEntry, MojangApiStatus, MojangSessionServerStatus, ServicesResponse,
         Status, XblStatusResponse,
     },
-    Failure,
+    Failure, Json,
 };
 
 const MOJANG_SESSIONSERVER_URL: &str =
@@ -19,14 +20,10 @@ const MINECRAFT_SERVICES_API_URL: &str =
     "https://api.minecraftservices.com/minecraft/profile/lookup/bulk/byname";
 const XBL_STATUS_URL: &str = "https://xnotify.xboxlive.com/servicestatusv6/US/en-US";
 
-#[allow(clippy::unused_async)]
 pub async fn handle_mcstatus(
     State(state): State<Arc<RwLock<ServicesResponse>>>,
-) -> Result<impl IntoResponse, Failure> {
-    Ok((
-        [("Content-Type", "application/json")],
-        serde_json::to_string(&*state.read().await)?,
-    ))
+) -> Result<Json<ServicesResponse>, Failure> {
+    Ok(Json(*state.read()))
 }
 
 pub async fn get_mcstatus(http: Client) -> ServicesResponse {
@@ -59,7 +56,7 @@ pub async fn refresh_mcstatus(http: Client, resp: Arc<RwLock<ServicesResponse>>)
             () = vss::shutdown_signal() => break,
         }
         let status = get_mcstatus(http.clone()).await;
-        let mut response = resp.write().await;
+        let mut response = resp.write();
         *response = status;
     }
 }
@@ -67,33 +64,31 @@ pub async fn refresh_mcstatus(http: Client, resp: Arc<RwLock<ServicesResponse>>)
 async fn get_xbox(client: Client) -> Status {
     let res = match client.get(XBL_STATUS_URL).send().await {
         Ok(v) => v,
-        Err(e) => return Status::DefiniteProblems(Some(e)),
+        Err(source) => {
+            warn!(?source, "Could not reach XBL status url");
+            return Status::DefiniteProblems;
+        }
     };
     let result = match res.json::<XblStatusResponse>().await {
         Ok(res) => res,
-        Err(e) => return Status::PossibleProblems(Some(e)),
+        Err(source) => {
+            warn!(?source, "Could not decode JSON from XBL api");
+            return Status::PossibleProblems;
+        }
     };
     if result.status.overall.state != "None" {
-        return Status::PossibleProblems(None);
+        warn!("overall status was not None");
+        return Status::PossibleProblems;
     }
     let minecraft_adjacent_services = [13, 16, 20, 22, 23, 24, 25];
-    for service in result.core_services {
+    for service in result.core_services.iter().chain(result.titles.iter()) {
         if !minecraft_adjacent_services.contains(&service.id) {
             continue;
         }
-        for scenario in service.possible_scenarios {
+        for scenario in &service.possible_scenarios {
             if scenario.id == service.status.id {
-                return Status::DefiniteProblems(None);
-            }
-        }
-    }
-    for service in result.titles {
-        if !minecraft_adjacent_services.contains(&service.id) {
-            continue;
-        }
-        for scenario in service.possible_scenarios {
-            if scenario.id == service.status.id {
-                return Status::DefiniteProblems(None);
+                warn!(id = scenario.id, "Got report of XBL problem from XBL api");
+                return Status::DefiniteProblems;
             }
         }
     }
@@ -103,14 +98,20 @@ async fn get_xbox(client: Client) -> Status {
 async fn get_session(client: Client) -> Status {
     let res = match client.get(MOJANG_SESSIONSERVER_URL).send().await {
         Ok(v) => v,
-        Err(e) => return Status::DefiniteProblems(Some(e)),
+        Err(source) => {
+            warn!(?source, "Could not reach Mojang session-server url");
+            return Status::DefiniteProblems;
+        }
     };
     let result = match res.json::<MojangSessionServerStatus>().await {
         Ok(res) => res,
-        Err(e) => return Status::PossibleProblems(Some(e)),
+        Err(source) => {
+            warn!(?source, "Could not decode Mojang session-server JSON");
+            return Status::PossibleProblems;
+        }
     };
     if result.name != "mcping_me" {
-        return Status::DefiniteProblems(None);
+        return Status::DefiniteProblems;
     }
     Status::Operational
 }
@@ -118,14 +119,20 @@ async fn get_session(client: Client) -> Status {
 async fn get_mojang(client: Client) -> Status {
     let res = match client.get(MOJANG_API_URL).send().await {
         Ok(v) => v,
-        Err(e) => return Status::DefiniteProblems(Some(e)),
+        Err(source) => {
+            warn!(?source, "Could not reach Mojang API url");
+            return Status::DefiniteProblems;
+        }
     };
     let result = match res.json::<MojangApiStatus>().await {
         Ok(res) => res,
-        Err(e) => return Status::PossibleProblems(Some(e)),
+        Err(source) => {
+            warn!(?source, "Could not decode Mojang API JSON");
+            return Status::PossibleProblems;
+        }
     };
     if result.id != "bbb47773bb48438e806b7731b2724e84" {
-        return Status::DefiniteProblems(None);
+        return Status::DefiniteProblems;
     }
     Status::Operational
 }
@@ -139,7 +146,10 @@ async fn get_minecraft(client: Client) -> Status {
         .await
     {
         Ok(v) => v,
-        Err(e) => return Status::DefiniteProblems(Some(e)),
+        Err(source) => {
+            warn!(?source, "Could not reach Minecraft API URL");
+            return Status::DefiniteProblems;
+        }
     };
 
     let expected = [
@@ -159,13 +169,16 @@ async fn get_minecraft(client: Client) -> Status {
 
     let mut data = match res.json::<Vec<MinecraftApiStatusEntry>>().await {
         Ok(v) => v,
-        Err(e) => return Status::PossibleProblems(Some(e)),
+        Err(source) => {
+            warn!(?source, "Could not decode Minecraft API JSON");
+            return Status::PossibleProblems;
+        }
     };
     data.sort_by(|a, b| a.name.cmp(&b.name));
-    trace!(expected = ?expected, data = ?data, "Got Minecraft API data");
     if data.as_slice() == expected {
         Status::Operational
     } else {
-        Status::PossibleProblems(None)
+        warn!(expected = ?expected, data = ?data, "Got non-matching Minecraft API data");
+        Status::PossibleProblems
     }
 }
