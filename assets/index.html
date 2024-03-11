@@ -61,6 +61,7 @@
     <a href="/api/">API</a>
     <footer>
       Mojang API status:
+      <!-- TODO: This should be multiple divs, and they should flex -->
       <div id="api-status"></div>
     </footer>
   </body>
@@ -96,6 +97,7 @@
     ipMsgElement.addEventListener("click", ipClick);
     ipDescriptorElement.addEventListener("click", ipClick);
     resetPingElement.addEventListener("click", function (_) {
+      // TODO: this is stupid, should actually reset everything instead
       window.location.reload();
     });
     javaTriggerElement.addEventListener("click", function (_) {
