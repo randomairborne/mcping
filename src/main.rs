@@ -95,7 +95,7 @@ async fn handle_java_ping(Path(address): Path<String>) -> Result<Json<MCPingResp
     #[allow(clippy::redundant_pub_crate)]
     let (latency, response) = select! {
         val = ping_future => val?,
-        _ = sleep_future => return Err(Failure::TimedOut),
+        () = sleep_future => return Err(Failure::TimedOut),
     };
     let mut player_sample: Vec<PlayerSample> = Vec::new();
     if let Some(sample) = response.players.sample {
