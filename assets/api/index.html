@@ -4,7 +4,10 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/icon.png" />
     <link rel="stylesheet" href="/index.css" />
-    <link rel="stylesheet" href="/hljs/default.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css"
+    />
     <meta name="viewport" content="width=device-width" />
     <meta
       property="og:title"
@@ -43,7 +46,7 @@
       Bedrock API response is the same, with the caveat of never returning the
       icon. The bedrock player list may also be synthetic.
     </p>
-    <pre><code id="examplePingResponse" class="language-json" style="text-align: left; display: inline-block;"></code></pre>
+    <pre><code id="examplePingResponse" class="language-json"></code></pre>
     <br />
     <p>
       There is also a Mojang Services API, at
@@ -53,30 +56,8 @@
       <code>DefiniteProblems</code>, <code>PossibleProblems</code>, and
       <code>Operational</code>.
     </p>
-    <pre><code id="exampleServicesResponse" class="language-json"
-           style="text-align: left; display: inline-block;"></code></pre>
+    <pre><code id="exampleServicesResponse" class="language-json"></code></pre>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="/api.js"></script>
   </body>
-  <script src="/hljs/highlight.min.js"></script>
-  <script>
-    async function loadExampleResponses() {
-      let ping = await fetch("/api/java/mcping.me", {}).then((response) =>
-        response.json(),
-      );
-      let ping_response = JSON.stringify(ping, null, "  ");
-      document.getElementById("examplePingResponse").innerHTML = new Option(
-        ping_response,
-      ).innerHTML;
-      let services = await fetch("/api/services", {}).then((response) =>
-        response.json(),
-      );
-      const services_string = JSON.stringify(services, null, "  ");
-      document.getElementById("exampleServicesResponse").innerHTML = new Option(
-        services_string,
-      ).innerHTML;
-    }
-
-    loadExampleResponses().then(() => {
-      hljs.highlightAll();
-    });
-  </script>
 </html>

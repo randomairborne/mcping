@@ -936,6 +936,7 @@ version = "1.0.0"
 dependencies = [
  "axum",
  "libmcping",
+ "parking_lot",
  "reqwest",
  "serde",
  "serde_json",

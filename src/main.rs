@@ -168,9 +168,7 @@ impl IntoResponse for Failure {
             Self::StatusReqwestFailed(_) => StatusCode::BAD_GATEWAY,
             Self::JsonProcessingFailed(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
-        if status != StatusCode::INTERNAL_SERVER_ERROR {
-            error!(error = ?self, "Error processing request");
-        }
+        error!(error = ?self, "Error processing request");
         let ser = ErrorSerialization {
             error: self.to_string(),
         };
