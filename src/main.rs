@@ -19,7 +19,7 @@ use parking_lot::RwLock;
 use reqwest::{header::HeaderMap, redirect::Policy, Client};
 use serde::Serialize;
 use tokio::{net::TcpListener, select};
-use tower_http::services::ServeDir;
+use tower_http::services::{ServeDir, ServeFile};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use crate::{
@@ -53,12 +53,15 @@ async fn main() {
     let current_mcstatus: Arc<RwLock<ServicesResponse>> =
         Arc::new(RwLock::new(get_mcstatus(http_client.clone()).await));
     tokio::spawn(refresh_mcstatus(http_client, Arc::clone(&current_mcstatus)));
+
+    let serve_404 = ServeFile::new(asset_dir.trim_end_matches('/').to_string() + "/404.html");
     let serve_dir = ServeDir::new(&asset_dir)
         .append_index_html_on_directories(true)
         .precompressed_gzip()
         .precompressed_br()
         .precompressed_deflate()
-        .precompressed_zstd();
+        .precompressed_zstd()
+        .fallback(serve_404);
     let app = axum::Router::new()
         .route("/api/:address", get(handle_java_ping))
         .route("/api/java/:address", get(handle_java_ping))
