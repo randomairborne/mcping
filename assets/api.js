@@ -19,8 +19,6 @@ async function loadExampleResponses() {
     });
 }
 
-window.addEventListener("load", (_) => {
-  loadExampleResponses().then(() => {
-    hljs.highlightAll();
-  });
+loadExampleResponses().then(() => {
+  hljs.highlightAll();
 });
