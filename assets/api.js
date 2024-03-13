@@ -8,6 +8,7 @@ async function loadExampleResponses() {
     .then((resp) => {
       let ping_response = JSON.stringify(resp, null, "  ");
       pingResponseElement.innerHTML = new Option(ping_response).innerHTML;
+      hljs.highlightElement(pingResponseElement);
     });
   fetch("/api/services", {})
     .then((response) => {
@@ -16,9 +17,6 @@ async function loadExampleResponses() {
     .then((resp) => {
       const services_string = JSON.stringify(resp, null, "  ");
       servicesElement.innerHTML = new Option(services_string).innerHTML;
+      hljs.highlightElement(servicesElement);
     });
 }
-
-loadExampleResponses().then(() => {
-  hljs.highlightAll();
-});
