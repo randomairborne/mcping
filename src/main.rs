@@ -7,7 +7,7 @@ use std::{net::SocketAddr, sync::Arc, time::Duration};
 use axum::{
     extract::{Path, Request},
     http::{
-        header::{CACHE_CONTROL, CONTENT_TYPE},
+        header::{CACHE_CONTROL, CONTENT_SECURITY_POLICY, CONTENT_TYPE},
         HeaderName, HeaderValue, StatusCode,
     },
     middleware::Next,
@@ -69,6 +69,7 @@ async fn main() {
         .route("/api/services", get(services::handle_mcstatus))
         .layer(axum::middleware::from_fn(noindex_cache))
         .fallback_service(serve_dir)
+        .layer(axum::middleware::from_fn(csp))
         .with_state(current_mcstatus);
     let socket_address = SocketAddr::from(([0, 0, 0, 0], port));
     let tcp = TcpListener::bind(socket_address).await.unwrap();
@@ -81,12 +82,29 @@ static ROBOTS_NAME: HeaderName = HeaderName::from_static("x-robots-tag");
 static ROBOTS_VALUE: HeaderValue = HeaderValue::from_static("noindex");
 static CACHE_CONTROL_AGE: HeaderValue = HeaderValue::from_static("s-maxage=30");
 
+static CSP_VALUE: HeaderValue = HeaderValue::from_static(
+    "default-src 'self'; \
+    connect-src 'self' https://*.giveip.io; \
+    script-src 'self' https://cdnjs.cloudflare.com/ajax/libs/highlight.js/; \
+    style-src 'self'; \
+    object-src 'none'; \
+    base-uri 'none'; \
+    require-trusted-types-for 'script';",
+);
+
 async fn noindex_cache(req: Request, next: Next) -> Response {
     let mut resp = next.run(req).await;
     resp.headers_mut()
         .insert(ROBOTS_NAME.clone(), ROBOTS_VALUE.clone());
     resp.headers_mut()
         .insert(CACHE_CONTROL, CACHE_CONTROL_AGE.clone());
+    resp
+}
+
+async fn csp(req: Request, next: Next) -> Response {
+    let mut resp = next.run(req).await;
+    resp.headers_mut()
+        .insert(CONTENT_SECURITY_POLICY, CSP_VALUE.clone());
     resp
 }
 
