@@ -7,7 +7,6 @@ const ipElement = document.getElementById("user-ip");
 const ipMsgElement = document.getElementById("ip-msg");
 const ipDescriptorElement = document.getElementById("ip-descriptor");
 const motdElement = document.getElementById("server-motd");
-const specialBreak = document.getElementById("special-break");
 const addressEntry = document.getElementById("address-entry");
 const selectElement = document.getElementById("select-ping");
 const responseElement = document.getElementById("server-response");
@@ -42,8 +41,9 @@ fetch("https://v4.giveip.io/raw")
   });
 
 resetPingElement.addEventListener("click", function (_) {
-  // TODO: this is stupid, should actually reset everything instead
-  window.location.reload();
+  selectElement.hidden = false;
+  responseElement.hidden = true;
+  motdElement.textContent = "";
 });
 javaTriggerElement.addEventListener("click", function (_) {
   doPing("/api/java/").then(() => {});
@@ -54,7 +54,6 @@ bedrockTriggerElement.addEventListener("click", function (_) {
 
 async function doPing(apiLocation) {
   let address = addressEntry.value;
-  specialBreak.hidden = false;
   serverStatusElement.innerHTML = "Pinging...";
   let response = await fetch(apiLocation + address, {}).then((response) =>
     response.json(),
@@ -79,6 +78,7 @@ async function doPing(apiLocation) {
   versionElement.innerHTML = mineParse(response["version"]["broadcast"]).raw;
   selectElement.hidden = true;
   responseElement.hidden = false;
+  serverStatusElement.innerHTML = null;
 }
 
 async function checkMojangStatus() {
@@ -116,48 +116,26 @@ checkMojangStatus().then(() => {});
 (function () {
   "use strict";
 
-  var currId = 0,
+  let currId = 0,
     obfuscators = {},
-    alreadyParsed = [],
-    styleMap = {
-      "§0": "color:#000000",
-      "§1": "color:#0000AA",
-      "§2": "color:#00AA00",
-      "§3": "color:#00AAAA",
-      "§4": "color:#AA0000",
-      "§5": "color:#AA00AA",
-      "§6": "color:#FFAA00",
-      "§7": "color:#AAAAAA",
-      "§8": "color:#555555",
-      "§9": "color:#5555FF",
-      "§a": "color:#55FF55",
-      "§b": "color:#55FFFF",
-      "§c": "color:#FF5555",
-      "§d": "color:#FF55FF",
-      "§e": "color:#FFFF55",
-      "§f": "color:#FFFFFF",
-      "§l": "font-weight:bold",
-      "§m": "text-decoration:line-through",
-      "§n": "text-decoration:underline",
-      "§o": "font-style:italic",
-    };
+    alreadyParsed = [];
 
   function obfuscate(elem, string) {
-    var multiMagic, currNode, listLen, nodeI;
+    let multiMagic, currNode, listLen, nodeI;
 
     function randInt(min, max) {
       return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
     function replaceRand(string, i) {
-      var randChar = String.fromCharCode(randInt(64, 95));
+      let randChar = String.fromCharCode(randInt(64, 95));
       return (
         string.substr(0, i) + randChar + string.substr(i + 1, string.length)
       );
     }
 
     function initMagic(el, str) {
-      var i = 0,
+      let i = 0,
         obsStr = str || el.innerHTML,
         strLen = obsStr.length;
       if (!strLen) return;
@@ -189,16 +167,28 @@ checkMojangStatus().then(() => {});
   }
 
   function applyCode(string, codes) {
-    var elem = document.createElement("span"),
+    let elem = document.createElement("span"),
       obfuscated = false;
 
     string = string.replace(/\x00/g, "");
 
+    const is_color_code = /(\d|[a-f])/im;
     codes.forEach(function (code) {
-      elem.style.cssText += styleMap[code] + ";";
+      const raw_code = code.replace("§", "");
+      if (is_color_code.test(raw_code)) {
+        elem.classList.forEach((cls) => {
+          const cls_code = cls.replace("motd-style-", "");
+          if (is_color_code.test(cls_code)) {
+            elem.classList.remove(`motd-style-${cls_code}`);
+          }
+        });
+      }
+      console.debug(code);
       if (code === "§k") {
         obfuscate(elem, string);
         obfuscated = true;
+      } else {
+        elem.classList.add(`motd-style-${raw_code}`);
       }
     });
 
@@ -208,7 +198,7 @@ checkMojangStatus().then(() => {});
   }
 
   function parseStyle(string) {
-    var finalPre = document.createElement("pre"),
+    let finalPre = document.createElement("pre"),
       codes = string.match(/§.{1}/g) || [],
       codesLen = codes.length,
       indexes = [],
@@ -261,7 +251,7 @@ checkMojangStatus().then(() => {});
   }
 
   window.mineParse = function initParser(input) {
-    var parsed,
+    let parsed,
       i = currId;
     if (i > 0) {
       while (i--) {

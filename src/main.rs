@@ -66,6 +66,8 @@ async fn main() {
         .route("/api/:address", get(handle_java_ping))
         .route("/api/java/:address", get(handle_java_ping))
         .route("/api/bedrock/:address", get(handle_bedrock_ping))
+        .route("/api/java/", get(no_address))
+        .route("/api/bedrock/", get(no_address))
         .route("/api/services", get(services::handle_mcstatus))
         .layer(axum::middleware::from_fn(noindex_cache))
         .fallback_service(serve_dir)
@@ -84,6 +86,7 @@ static CACHE_CONTROL_AGE: HeaderValue = HeaderValue::from_static("s-maxage=30");
 
 static CSP_VALUE: HeaderValue = HeaderValue::from_static(
     "default-src 'self'; \
+    img-src 'self' data:; \
     connect-src 'self' https://*.giveip.io; \
     script-src 'self' https://cdnjs.cloudflare.com/ajax/libs/highlight.js/; \
     style-src 'self'; \
@@ -170,6 +173,10 @@ async fn handle_bedrock_ping(Path(address): Path<String>) -> Result<Json<MCPingR
     }))
 }
 
+async fn no_address() -> Failure {
+    Failure::NoHostname
+}
+
 #[derive(thiserror::Error, Debug)]
 pub enum Failure {
     #[error("Error connecting to the server")]
@@ -180,6 +187,8 @@ pub enum Failure {
     StatusReqwestFailed(#[from] reqwest::Error),
     #[error("JSON processing error")]
     JsonProcessingFailed(#[from] serde_json::Error),
+    #[error("No server address specified!")]
+    NoHostname,
 }
 
 impl IntoResponse for Failure {
@@ -188,6 +197,7 @@ impl IntoResponse for Failure {
             Self::ConnectionFailed(_) | Self::TimedOut => StatusCode::OK,
             Self::StatusReqwestFailed(_) => StatusCode::BAD_GATEWAY,
             Self::JsonProcessingFailed(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::NoHostname => StatusCode::BAD_REQUEST,
         };
         error!(error = ?self, "Error processing request");
         let ser = ErrorSerialization {
