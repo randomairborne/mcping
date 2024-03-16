@@ -92,8 +92,7 @@ static CSP_VALUE: HeaderValue = HeaderValue::from_static(
     https://static.cloudflareinsights.com; \
     style-src 'self' https://cdnjs.cloudflare.com/ajax/libs/highlight.js/; \
     object-src 'none'; \
-    base-uri 'none'; \
-    require-trusted-types-for 'script';",
+    base-uri 'none';",
 );
 
 async fn noindex_cache(req: Request, next: Next) -> Response {
