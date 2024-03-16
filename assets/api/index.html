@@ -33,13 +33,12 @@
     <p>
       The MCping API is very simple. There is a Java API at /api/java/, and a
       bedrock api at /api/bedrock/. To specify what server to ping, you append
-      that server to the end of the URL, like so.
+      that server to the end of the URL, like so:
+      <a href="/api/java/mcping.me">/api/java/mcping.me</a>.
     </p>
-    <a href="/api/java/mcping.me">/api/java/mcping.me</a>
-    <br />
     <p>
-      The response will look like so, with an "icon" base64 PNG field added if
-      the server has an icon. The latency is in mlliseconds, from Toronto,
+      The response will look as below, with an "icon" base64 PNG field added if
+      the server has an icon. The latency is in milliseconds, from Toronto,
       Canada. Keep in mind that some servers may use signcode colors for the
       MOTD and player sample. Your application should handle this. The player
       sample is often used for advertising, so take it with a grain of salt. The
@@ -47,7 +46,6 @@
       icon. The bedrock player list may also be synthetic.
     </p>
     <pre><code id="examplePingResponse" class="language-json"></code></pre>
-    <br />
     <p>
       There is also a Mojang Services API, at
       <a href="/api/services">/api/services</a>. This is useful for checking if
@@ -57,7 +55,6 @@
       <code>Operational</code>.
     </p>
     <pre><code id="exampleServicesResponse" class="language-json"></code></pre>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <script src="/api.js"></script>
+    <script src="/api.js" type="module"></script>
   </body>
 </html>

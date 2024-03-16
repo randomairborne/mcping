@@ -1,3 +1,8 @@
+import hljs from "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/es/highlight.min.js";
+import json from "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/es/languages/json.min.js";
+
+hljs.registerLanguage("json", json);
+
 async function loadExampleResponses() {
   const servicesElement = document.getElementById("exampleServicesResponse");
   const pingResponseElement = document.getElementById("examplePingResponse");
@@ -20,3 +25,5 @@ async function loadExampleResponses() {
       hljs.highlightElement(servicesElement);
     });
 }
+
+loadExampleResponses().then(() => {});

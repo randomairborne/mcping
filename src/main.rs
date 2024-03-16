@@ -90,7 +90,7 @@ static CSP_VALUE: HeaderValue = HeaderValue::from_static(
     connect-src 'self' https://*.giveip.io; \
     script-src 'self' https://cdnjs.cloudflare.com/ajax/libs/highlight.js/ \
     https://static.cloudflareinsights.com; \
-    style-src 'self'; \
+    style-src 'self' https://cdnjs.cloudflare.com/ajax/libs/highlight.js/; \
     object-src 'none'; \
     base-uri 'none'; \
     require-trusted-types-for 'script';",
