@@ -88,9 +88,8 @@ static CSP_VALUE: HeaderValue = HeaderValue::from_static(
     "default-src 'self'; \
     img-src 'self' data:; \
     connect-src 'self' https://*.giveip.io; \
-    script-src 'self' https://cdnjs.cloudflare.com/ajax/libs/highlight.js/ \
-    https://static.cloudflareinsights.com; \
-    style-src 'self' https://cdnjs.cloudflare.com/ajax/libs/highlight.js/; \
+    script-src 'self' https://static.cloudflareinsights.com; \
+    style-src 'self';\
     object-src 'none'; \
     base-uri 'none';",
 );

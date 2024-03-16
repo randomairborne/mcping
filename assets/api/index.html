@@ -4,10 +4,6 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/icon.png" />
     <link rel="stylesheet" href="/index.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css"
-    />
     <meta name="viewport" content="width=device-width" />
     <meta
       property="og:title"
@@ -45,7 +41,19 @@
       Bedrock API response is the same, with the caveat of never returning the
       icon. The bedrock player list may also be synthetic.
     </p>
-    <pre><code id="examplePingResponse" class="language-json"></code></pre>
+    <pre><code id="examplePingResponse">{
+  "latency": 47,
+  "players": {
+    "online": 0,
+    "maximum": 20,
+    "sample": []
+  },
+  "motd": "Minecraft Support Discord Testing Server",
+  "version": {
+    "protocol": 765,
+    "broadcast": "1.20.4"
+  }
+}</code></pre>
     <p>
       There is also a Mojang Services API, at
       <a href="/api/services">/api/services</a>. This is useful for checking if
@@ -54,7 +62,11 @@
       <code>DefiniteProblems</code>, <code>PossibleProblems</code>, and
       <code>Operational</code>.
     </p>
-    <pre><code id="exampleServicesResponse" class="language-json"></code></pre>
-    <script src="/api.js" type="module"></script>
+    <pre><code class="language-json">{
+  "Xbox services": "Operational",
+  "SessionServer": "Operational",
+  "Mojang API": "Operational",
+  "Minecraft API": "Operational"
+}</code></pre>
   </body>
 </html>

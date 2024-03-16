@@ -64,6 +64,9 @@ footer {
 pre > code {
   text-align: left;
   display: inline-block;
+  border-style: inset;
+  border-radius: 4px;
+  padding: 1ch;
 }
 
 .execute-ping-container {
