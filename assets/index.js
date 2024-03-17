@@ -81,6 +81,21 @@ async function doPing(apiLocation) {
   serverStatusElement.innerHTML = null;
 }
 
+async function doAutoPing() {
+  let windowHash = window.location.hash.substring(1);
+  let [actionString, edition, hostname] = windowHash.split(";", 3);
+  if (actionString === "ping") {
+    addressEntry.value = hostname;
+    if (edition.startsWith("b")) {
+      await doPing("/api/bedrock/");
+    } else if (edition.startsWith("j")) {
+      await doPing("/api/java/");
+    }
+  }
+}
+
+doAutoPing().then(() => {});
+
 async function checkMojangStatus() {
   const response = await fetch("/api/services", {}).then((response) => {
     return response.json();
