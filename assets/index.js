@@ -1,23 +1,26 @@
-const serverStatusElement = document.getElementById("server-status");
-const playersElement = document.getElementById("server-players");
-const faviconElement = document.getElementById("server-favicon");
-const latencyElement = document.getElementById("server-latency");
-const versionElement = document.getElementById("server-version");
-const ipElement = document.getElementById("user-ip");
-const ipMsgElement = document.getElementById("ip-msg");
-const ipDescriptorElement = document.getElementById("ip-descriptor");
-const motdElement = document.getElementById("server-motd");
-const addressEntry = document.getElementById("address-entry");
-const selectElement = document.getElementById("select-ping");
-const responseElement = document.getElementById("server-response");
-const resetPingElement = document.getElementById("reset-ping");
-const javaTriggerElement = document.getElementById("java-btn");
-const bedrockTriggerElement = document.getElementById("bedrock-btn");
-const xblApiStatusElement = document.getElementById("api-status-xbl");
-const mojangApiStatusElement = document.getElementById("api-status-mjapi");
-const mojangSessionServerStatusElement =
-  document.getElementById("api-status-mjss");
-const minecraftApiStatusElement = document.getElementById("api-status-mcapi");
+function gebi(elId) {
+  return document.getElementById(elId);
+}
+
+const serverStatusElement = gebi("server-status");
+const playersElement = gebi("server-players");
+const faviconElement = gebi("server-favicon");
+const latencyElement = gebi("server-latency");
+const versionElement = gebi("server-version");
+const ipElement = gebi("user-ip");
+const ipMsgElement = gebi("ip-msg");
+const ipDescriptorElement = gebi("ip-descriptor");
+const motdElement = gebi("server-motd");
+const addressEntry = gebi("address-entry");
+const selectElement = gebi("select-ping");
+const responseElement = gebi("server-response");
+const resetPingElement = gebi("reset-ping");
+const javaTriggerElement = gebi("java-btn");
+const bedrockTriggerElement = gebi("bedrock-btn");
+const xblApiStatusElement = gebi("api-status-xbl");
+const mojangApiStatusElement = gebi("api-status-mjapi");
+const mojangSessionServerStatusElement = gebi("api-status-mjss");
+const minecraftApiStatusElement = gebi("api-status-mcapi");
 const apiStatusElements = [
   xblApiStatusElement,
   mojangApiStatusElement,
