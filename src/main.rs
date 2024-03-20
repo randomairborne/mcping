@@ -43,7 +43,7 @@ async fn main() {
         .connect_timeout(Duration::from_secs(10))
         .default_headers(default_headers)
         .user_agent(concat!(
-            "minecraftserviceschecker/",
+            "mcping.me/",
             env!("CARGO_PKG_VERSION"),
             " (https://github.com/randomairborne/mcping)"
         ))
@@ -87,7 +87,7 @@ static CACHE_CONTROL_AGE: HeaderValue = HeaderValue::from_static("s-maxage=30");
 static CSP_VALUE: HeaderValue = HeaderValue::from_static(
     "default-src 'self'; \
     img-src 'self' data:; \
-    connect-src 'self' https://*.giveip.io; \
+    connect-src 'self' https://v4.giveip.io; \
     script-src 'self' https://static.cloudflareinsights.com; \
     style-src 'self';\
     object-src 'none'; \
