@@ -77,8 +77,8 @@ async function doPing(apiLocation) {
     response["players"]["online"] +
     "/" +
     response["players"]["maximum"];
-  motdElement.innerHTML = mineParse(response["motd"]).raw;
-  versionElement.innerHTML = mineParse(response["version"]["broadcast"]).raw;
+  motdElement.append(...highlightMotd(response["motd"]));
+  versionElement.append(...highlightMotd(response["version"]["broadcast"]));
   selectElement.hidden = true;
   responseElement.hidden = false;
   serverStatusElement.innerHTML = null;
@@ -131,161 +131,32 @@ async function checkMojangStatus() {
 
 checkMojangStatus().then(() => {});
 
-(function () {
-  "use strict";
-
-  let currId = 0,
-    obfuscators = {},
-    alreadyParsed = [];
-
-  function obfuscate(elem, string) {
-    let multiMagic, currNode, listLen, nodeI;
-
-    function randInt(min, max) {
-      return Math.floor(Math.random() * (max - min + 1)) + min;
+function highlightMotd(motd) {
+  const nextEl = document.createElement('span');
+  const SECTION = "§";
+  let output = [];
+  let lastColor = '';
+  let alternateStyling = [];
+  const isCharCode = /([a-f]|[0-9])/;
+  let lastCharWasSection = false;
+  for (let i=0;i<motd.length; i++) {
+    const next = motd.charAt(i);
+    if (next === SECTION) {
+      output.push(nextEl);
+      lastCharWasSection = true;
+      continue;
     }
-
-    function replaceRand(string, i) {
-      let randChar = String.fromCharCode(randInt(64, 95));
-      return (
-        string.substr(0, i) + randChar + string.substr(i + 1, string.length)
-      );
-    }
-
-    function initMagic(el, str) {
-      let i = 0,
-        obsStr = str || el.innerHTML,
-        strLen = obsStr.length;
-      if (!strLen) return;
-      obfuscators[currId].push(
-        window.setInterval(function () {
-          if (i >= strLen) i = 0;
-          obsStr = replaceRand(obsStr, i);
-          el.innerHTML = obsStr;
-          i++;
-        }, 0),
-      );
-    }
-
-    if (string.indexOf("<br>") > -1) {
-      elem.innerHTML = string;
-      listLen = elem.childNodes.length;
-      for (nodeI = 0; nodeI < listLen; nodeI++) {
-        currNode = elem.childNodes[nodeI];
-        if (currNode.nodeType === 3) {
-          multiMagic = document.createElement("span");
-          multiMagic.innerHTML = currNode.nodeValue;
-          elem.replaceChild(multiMagic, currNode);
-          initMagic(multiMagic);
-        }
-      }
-    } else {
-      initMagic(elem, string);
-    }
-  }
-
-  function applyCode(string, codes) {
-    let elem = document.createElement("span"),
-      obfuscated = false;
-
-    string = string.replace(/\x00/g, "");
-
-    const is_color_code = /(\d|[a-f])/im;
-    codes.forEach(function (code) {
-      const raw_code = code.replace("§", "");
-      if (is_color_code.test(raw_code)) {
-        elem.classList.forEach((cls) => {
-          const cls_code = cls.replace("motd-style-", "");
-          if (is_color_code.test(cls_code)) {
-            elem.classList.remove(`motd-style-${cls_code}`);
-          }
-        });
-      }
-      console.debug(code);
-      if (code === "§k") {
-        obfuscate(elem, string);
-        obfuscated = true;
+    if (lastCharWasSection) {
+      if (next.match(isCharCode)) {
+        lastColor = `motd-style-${next}`;
+      } else if (next === 'r') {
+        lastColor = '';
+        alternateStyling = [];
       } else {
-        elem.classList.add(`motd-style-${raw_code}`);
+        alternateStyling.push(`motd-style-${next}`);
       }
-    });
-
-    if (!obfuscated) elem.innerHTML = string;
-
-    return elem;
+    }
+    lastCharWasSection = false;
   }
-
-  function parseStyle(string) {
-    let finalPre = document.createElement("pre"),
-      codes = string.match(/§.{1}/g) || [],
-      codesLen = codes.length,
-      indexes = [],
-      indexDelta,
-      apply = [],
-      strSlice,
-      i;
-
-    if (!obfuscators[currId]) obfuscators[currId] = [];
-
-    string = string.replace(/\n|\\n/g, "<br>");
-
-    for (i = 0; i < codesLen; i++) {
-      indexes.push(string.indexOf(codes[i]));
-      string = string.replace(codes[i], "\x00\x00");
-    }
-
-    if (indexes[0] !== 0) {
-      finalPre.appendChild(applyCode(string.substring(0, indexes[0]), []));
-    }
-
-    for (i = 0; i < codesLen; i++) {
-      indexDelta = indexes[i + 1] - indexes[i];
-      if (indexDelta === 2) {
-        while (indexDelta === 2) {
-          apply.push(codes[i]);
-          i++;
-          indexDelta = indexes[i + 1] - indexes[i];
-        }
-        apply.push(codes[i]);
-      } else {
-        apply.push(codes[i]);
-      }
-      if (apply.lastIndexOf("§r") > -1) {
-        apply = apply.slice(apply.lastIndexOf("§r") + 1);
-      }
-      strSlice = string.substring(indexes[i], indexes[i + 1]);
-      finalPre.appendChild(applyCode(strSlice, apply));
-    }
-
-    return finalPre;
-  }
-
-  function clearObfuscators(id) {
-    obfuscators[id].forEach(function (interval) {
-      clearInterval(interval);
-    });
-    alreadyParsed[id] = [];
-    obfuscators[id] = [];
-  }
-
-  window.mineParse = function initParser(input) {
-    let parsed,
-      i = currId;
-    if (i > 0) {
-      while (i--) {
-        if (alreadyParsed[i].nodeType) {
-          if (!document.contains(alreadyParsed[i])) {
-            clearObfuscators(i);
-          }
-        }
-      }
-    }
-    parsed = parseStyle(input);
-    alreadyParsed.push(parsed);
-    currId++;
-    return {
-      parsed: parsed,
-      raw: parsed.innerHTML,
-    };
-  };
-})();
+  return output;
+}
