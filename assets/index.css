@@ -4,6 +4,10 @@
   font-display: swap;
 }
 
+:root {
+  --motd-k-color: #fff;
+}
+
 body {
   text-align: center;
   background: hsl(200, 4%, 10%);
@@ -171,67 +175,83 @@ pre > code {
 }
 
 .motd-style-0 {
-  color: #000000;
+  --motd-k-color: #000000;
+  color: var(--motd-k-color);
 }
 
 .motd-style-1 {
-  color: #0000aa;
+  --motd-k-color: #0000aa;
+  color: var(--motd-k-color);
 }
 
 .motd-style-2 {
-  color: #00aa00;
+  --motd-k-color: #00aa00;
+  color: var(--motd-k-color);
 }
 
 .motd-style-3 {
-  color: #00aaaa;
+  --motd-k-color: #00aaaa;
+  color: var(--motd-k-color);
 }
 
 .motd-style-4 {
-  color: #aa0000;
+  --motd-k-color: #aa0000;
+  color: var(--motd-k-color);
 }
 
 .motd-style-5 {
-  color: #aa00aa;
+  --motd-k-color: #aa00aa;
+  color: var(--motd-k-color);
 }
 
 .motd-style-6 {
-  color: #ffaa00;
+  --motd-k-color: #ffaa00;
+  color: var(--motd-k-color);
 }
 
 .motd-style-7 {
-  color: #aaaaaa;
+  --motd-k-color: #aaaaaa;
+  color: var(--motd-k-color);
 }
 
 .motd-style-8 {
-  color: #555555;
+  --motd-k-color: #555555;
+  color: var(--motd-k-color);
 }
 
 .motd-style-9 {
-  color: #5555ff;
+  --motd-k-color: #5555ff;
+  color: var(--motd-k-color);
 }
 
 .motd-style-a {
-  color: #55ff55;
+  --motd-k-color: #55ff55;
+  color: var(--motd-k-color);
 }
 
 .motd-style-b {
-  color: #55ffff;
+  --motd-k-color: #55ffff;
+  color: var(--motd-k-color);
 }
 
 .motd-style-c {
-  color: #ff5555;
+  --motd-k-color: #ff5555;
+  color: var(--motd-k-color);
 }
 
 .motd-style-d {
-  color: #ff55ff;
+  --motd-k-color: #ff55ff;
+  color: var(--motd-k-color);
 }
 
 .motd-style-e {
-  color: #ffff55;
+  --motd-k-color: #ffff55;
+  color: var(--motd-k-color);
 }
 
 .motd-style-f {
-  color: #ffffff;
+  --motd-k-color: #ffffff;
+  color: var(--motd-k-color);
 }
 
 .motd-style-l {
@@ -248,4 +268,9 @@ pre > code {
 
 .motd-style-o {
   font-style: italic;
+}
+
+.motd-style-k {
+  color: transparent;
+  text-shadow: 0 0 0.3rem var(--motd-k-color);
 }
