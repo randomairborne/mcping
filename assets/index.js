@@ -47,6 +47,7 @@ resetPingElement.addEventListener("click", function (_) {
   selectElement.hidden = false;
   responseElement.hidden = true;
   motdElement.textContent = "";
+  versionElement.textContent = "";
 });
 javaTriggerElement.addEventListener("click", function (_) {
   doPing("/api/java/").then(() => {});
@@ -75,7 +76,7 @@ async function doPing(apiLocation) {
   playersElement.innerText =
     "Players: " +
     response["players"]["online"] +
-    "/" +
+    " / " +
     response["players"]["maximum"];
   motdElement.append(...highlightMotd(response["motd"]));
   versionElement.append(...highlightMotd(response["version"]["broadcast"]));
@@ -132,31 +133,55 @@ async function checkMojangStatus() {
 checkMojangStatus().then(() => {});
 
 function highlightMotd(motd) {
-  const nextEl = document.createElement('span');
   const SECTION = "§";
   let output = [];
-  let lastColor = '';
+  let lastColor = "";
   let alternateStyling = [];
+  let lastStart = 0;
   const isCharCode = /([a-f]|[0-9])/;
   let lastCharWasSection = false;
-  for (let i=0;i<motd.length; i++) {
+  for (let i = 0; i < motd.length; i++) {
     const next = motd.charAt(i);
     if (next === SECTION) {
-      output.push(nextEl);
+      output.push(
+        getNextElement(lastColor, alternateStyling, motd, lastStart, i),
+      );
       lastCharWasSection = true;
       continue;
+    }
+    if (next === "\n") {
+      output.push(
+        getNextElement(lastColor, alternateStyling, motd, lastStart, i),
+      );
+      const br = document.createElement("br");
+      output.push(br);
+      lastStart = i;
     }
     if (lastCharWasSection) {
       if (next.match(isCharCode)) {
         lastColor = `motd-style-${next}`;
-      } else if (next === 'r') {
-        lastColor = '';
+      } else if (next === "r") {
+        lastColor = "";
         alternateStyling = [];
       } else {
         alternateStyling.push(`motd-style-${next}`);
       }
+      lastStart = i + 1;
     }
     lastCharWasSection = false;
   }
+  output.push(
+    getNextElement(lastColor, alternateStyling, motd, lastStart, motd.length),
+  );
   return output;
+}
+
+function getNextElement(lastColor, alternateStyling, motd, lastStart, i) {
+  const nextEl = document.createElement("span");
+  if (lastColor !== "") {
+    nextEl.classList.add(lastColor);
+  }
+  nextEl.classList.add(...alternateStyling);
+  nextEl.textContent = motd.substring(lastStart, i);
+  return nextEl;
 }
