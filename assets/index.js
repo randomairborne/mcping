@@ -138,10 +138,10 @@ function highlightMotd(motd) {
   let lastColor = "";
   let alternateStyling = [];
   let lastStart = 0;
-  const isCharCode = /([a-f]|[0-9])/;
+  const isCharCode = /([A-F][a-f]|[0-9])/;
   let lastCharWasSection = false;
   for (let i = 0; i < motd.length; i++) {
-    const next = motd.charAt(i);
+    const next = motd.charAt(i).toLowerCase();
     if (next === SECTION) {
       output.push(
         getNextElement(lastColor, alternateStyling, motd, lastStart, i),
