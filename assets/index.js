@@ -98,8 +98,6 @@ async function doAutoPing() {
   }
 }
 
-doAutoPing().then(() => {});
-
 async function checkMojangStatus() {
   const response = await fetch("/api/services", {}).then((response) => {
     return response.json();
@@ -130,15 +128,13 @@ async function checkMojangStatus() {
   }
 }
 
-checkMojangStatus().then(() => {});
-
 function highlightMotd(motd) {
   const SECTION = "§";
   let output = [];
   let lastColor = "";
   let alternateStyling = [];
   let lastStart = 0;
-  const isCharCode = /([A-F][a-f]|[0-9])/;
+  const isCharCode = /([A-F]|[a-f]|[0-9])/;
   let lastCharWasSection = false;
   for (let i = 0; i < motd.length; i++) {
     const next = motd.charAt(i).toLowerCase();
@@ -185,3 +181,6 @@ function getNextElement(lastColor, alternateStyling, motd, lastStart, i) {
   nextEl.textContent = motd.substring(lastStart, i);
   return nextEl;
 }
+
+checkMojangStatus().then(() => {});
+doAutoPing().then(() => {});
