@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block description %}
+  mcping - ping {{ hostname }}
+{% endblock description %}
+{% block body %}
+  <div class="server-response" id="server-response">
+    <div class="server-response-stack">
+      <h1>Pinging <code>{{ hostname }}</code></h1>
+      <iframe
+        class="ping-frame"
+        src="{{ root_url }}/internal/ping-frame/{{ edition }}/{{ hostname }}"
+      ></iframe>
+      <a role="button" href="{{ root_url }}">Ping Another</a>
+    </div>
+  </div>
+  <div class="vspacer"></div>
+  {% include "api-status.html" %}
+{% endblock %}

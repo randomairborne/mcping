@@ -10,7 +10,7 @@ use crate::{
         MinecraftApiStatusEntry, MojangApiStatus, MojangSessionServerStatus, ServicesResponse,
         Status, XblStatusResponse,
     },
-    Failure, Json,
+    AppState, Failure, Json,
 };
 
 const MOJANG_SESSIONSERVER_URL: &str =
@@ -21,9 +21,9 @@ const MINECRAFT_SERVICES_API_URL: &str =
 const XBL_STATUS_URL: &str = "https://xnotify.xboxlive.com/servicestatusv6/US/en-US";
 
 pub async fn handle_mcstatus(
-    State(state): State<Arc<RwLock<ServicesResponse>>>,
+    State(state): State<AppState>,
 ) -> Result<Json<ServicesResponse>, Failure> {
-    Ok(Json(*state.read()))
+    Ok(Json(*state.svc_response.read()))
 }
 
 pub async fn get_mcstatus(http: Client) -> ServicesResponse {
@@ -110,7 +110,7 @@ async fn get_session(client: Client) -> Status {
             return Status::PossibleProblems;
         }
     };
-    if result.name != "mcping_me" {
+    if result.name != "mcping_me" || result.id != "bbb47773bb48438e806b7731b2724e84" {
         return Status::DefiniteProblems;
     }
     Status::Operational
@@ -131,7 +131,7 @@ async fn get_mojang(client: Client) -> Status {
             return Status::PossibleProblems;
         }
     };
-    if result.id != "bbb47773bb48438e806b7731b2724e84" {
+    if result.name != "mcping_me" || result.id != "bbb47773bb48438e806b7731b2724e84" {
         return Status::DefiniteProblems;
     }
     Status::Operational

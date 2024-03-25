@@ -16,11 +16,11 @@ body {
   min-height: 99vh;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  margin: 0px;
-  padding: 0px;
+  margin: 0;
+  padding: 0;
 }
 
-body#apiBody {
+body.api-body {
   margin-left: 20%;
   margin-right: 20%;
 }
@@ -45,7 +45,8 @@ img {
   image-rendering: pixelated;
 }
 
-button {
+button,
+a[role="button"] {
   border: none;
   border-radius: 5px;
   padding: 15px;
@@ -156,6 +157,12 @@ pre > code {
   border-width: 1px;
   border-radius: 4px;
   width: fit-content;
+}
+
+.ping-frame {
+  height: 70vh;
+  width: 80vw;
+  border-style: none;
 }
 
 .green {

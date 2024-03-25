@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="{{ root_url }}/icon.png" />
+    <link rel="stylesheet" href="{{ root_url }}/index.css" />
+    <meta name="viewport" content="width=device-width" />
+    <meta property="og:title" content="mcping - Minecraft Server Tester" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="{{ root_url }}/icon.png" />
+    <meta property="og:url" content="{{ root_url }}/" />
+    <meta property="og:site_name" content="mcping - Minecraft Server Tester" />
+    <meta
+      property="og:description"
+      content="{% block description %}{% endblock %}"
+    />
+    <meta name="description" content="{% block description %}{% endblock %}" />
+    <title>Minecraft Server Tester - mcping</title>
+  </head>
+
+  <body>
+    {% block body %}{% endblock %}
+  </body>
+</html>

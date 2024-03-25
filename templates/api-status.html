@@ -1,0 +1,33 @@
+<label for="api-status" class="api-status-label">Mojang API status:</label>
+<div id="api-status" class="root-api-status">
+  <div class="api-status-container">
+    <label for="api-status-xbl">Xbox Services:</label>
+    <span id="api-status-xbl" class="{{ svc_status.xbox|api_color }}">
+      {{ svc_status.xbox|api_words }}
+    </span>
+  </div>
+  <div class="api-status-container">
+    <label for="api-status-mjss">Mojang SessionServer:</label>
+    <span
+      id="api-status-mjss"
+      class="{{ svc_status.mojang_session|api_color }}"
+    >
+      {{ svc_status.mojang_session|api_words }}
+    </span>
+  </div>
+  <div class="api-status-container">
+    <label for="api-status-mjapi">Mojang API:</label>
+    <span id="api-status-mjapi" class="{{ svc_status.mojang_api|api_color }}">
+      {{ svc_status.mojang_api|api_words }}
+    </span>
+  </div>
+  <div class="api-status-container">
+    <label for="api-status-mcapi">Minecraft API:</label>
+    <span
+      id="api-status-mcapi"
+      class="{{ svc_status.minecraft_api|api_color }}"
+    >
+      {{ svc_status.minecraft_api|api_words }}
+    </span>
+  </div>
+</div>

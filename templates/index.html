@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block description %}
+  mcping.me is a powerful, ad-free Minecraft server tester. Ping Java and
+  Bedrock servers to check if they're working. Check if Mojang or XBox services
+  are having issues. All for free, without ads.
+{% endblock description %}
+{% block body %}
+  <h1>Minecraft Server Tester</h1>
+  <div id="select-ping" class="execute-ping-container">
+    <form class="execute-ping-stack" action="{{ root_url }}/ping/redirect">
+      <label for="address-entry" hidden>Server address</label>
+      <input id="address-entry" placeholder="Server address" name="address" />
+      <div class="select-ping">
+        <button type="submit" name="edition" class="java" value="java">
+          Ping Java
+        </button>
+        <div class="widen"></div>
+        <button type="submit" name="edition" class="bedrock" value="bedrock">
+          Ping Bedrock
+        </button>
+      </div>
+    </form>
+    <div class="small-vspacer"></div>
+    <div id="server-status"></div>
+    <div class="small-vspacer"></div>
+    <div class="user-ip-stack">
+      <span id="ip-descriptor" class="ip">Your IP:</span>
+      <span id="ip-msg" class="ip">Click to Reveal</span>
+      <span id="user-ip" class="ip" hidden></span>
+    </div>
+  </div>
+  <a href="/api/">API</a>
+  <footer>{% include "api-status.html" %}</footer>
+  <script src="{{ root_url }}/index.js"></script>
+{% endblock body %}
