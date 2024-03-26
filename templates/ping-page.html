@@ -10,7 +10,7 @@
         class="ping-frame"
         src="{{ root_url }}/internal/ping-frame/{{ edition }}/{{ hostname }}"
       ></iframe>
-      <a role="button" href="{{ root_url }}">Ping Another</a>
+      {% include "ping-form.html" %}
     </div>
   </div>
   <div class="vspacer"></div>

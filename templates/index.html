@@ -7,19 +7,7 @@
 {% block body %}
   <h1>Minecraft Server Tester</h1>
   <div id="select-ping" class="execute-ping-container">
-    <form class="execute-ping-stack" action="{{ root_url }}/ping/redirect">
-      <label for="address-entry" hidden>Server address</label>
-      <input id="address-entry" placeholder="Server address" name="address" />
-      <div class="select-ping">
-        <button type="submit" name="edition" class="java" value="java">
-          Ping Java
-        </button>
-        <div class="widen"></div>
-        <button type="submit" name="edition" class="bedrock" value="bedrock">
-          Ping Bedrock
-        </button>
-      </div>
-    </form>
+    {% include "ping-form.html" %}
     <div class="small-vspacer"></div>
     <div id="server-status"></div>
     <div class="small-vspacer"></div>
