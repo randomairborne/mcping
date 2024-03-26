@@ -80,6 +80,7 @@ async fn main() {
         .route_with_tsr("/ping/:edition/:hostname", get(ping_page))
         .route("/ping/redirect", get(ping_redirect))
         .route("/internal/ping-frame/:edition/:hostname", get(ping_frame))
+        .route("/internal/ping-markup/:edition/:hostname", get(ping_markup))
         .route("/api/:address", get(handle_java_ping))
         .route("/api/java/:address", get(handle_java_ping))
         .route("/api/bedrock/:address", get(handle_bedrock_ping))
@@ -110,6 +111,7 @@ static CACHE_CONTROL_AGE: HeaderValue = HeaderValue::from_static("s-maxage=30");
 
 static CSP_VALUE: HeaderValue = HeaderValue::from_static(
     "default-src 'self'; \
+    frame-src 'self'; \
     img-src 'self' data:; \
     connect-src 'self' https://v4.giveip.io; \
     script-src 'self' https://static.cloudflareinsights.com; \
@@ -194,17 +196,11 @@ async fn ping_page(
     })
 }
 
-#[derive(Template)]
-#[template(path = "ping-frame.html")]
-pub struct PingFrameTemplate {
-    ping: MCPingResponse,
-    root_url: String,
-}
-
-async fn ping_frame(
-    State(state): State<AppState>,
-    Path((edition, hostname)): Path<(String, String)>,
-) -> Result<PingFrameTemplate, ErrorTemplate> {
+async fn ping_generic(
+    edition: String,
+    hostname: String,
+    state: &AppState,
+) -> Result<MCPingResponse, ErrorTemplate> {
     let ping = match edition.as_str() {
         "java" => ping_java(hostname).await,
         "bedrock" => ping_bedrock(hostname).await,
@@ -219,7 +215,40 @@ async fn ping_frame(
         Ok(v) => v,
         Err(e) => return Err(ErrorTemplate::from_failure(&e, &state)),
     };
+    Ok(ping)
+}
+
+#[derive(Template)]
+#[template(path = "ping-frame.html")]
+pub struct PingFrameTemplate {
+    ping: MCPingResponse,
+    root_url: String,
+}
+
+async fn ping_frame(
+    State(state): State<AppState>,
+    Path((edition, hostname)): Path<(String, String)>,
+) -> Result<PingFrameTemplate, ErrorTemplate> {
+    let ping = ping_generic(edition, hostname, &state).await?;
     Ok(PingFrameTemplate {
+        ping,
+        root_url: state.root_url.to_string(),
+    })
+}
+
+#[derive(Template)]
+#[template(path = "ping-element.html")]
+pub struct PingElementTemplate {
+    ping: MCPingResponse,
+    root_url: String,
+}
+
+async fn ping_markup(
+    State(state): State<AppState>,
+    Path((edition, hostname)): Path<(String, String)>,
+) -> Result<PingElementTemplate, ErrorTemplate> {
+    let ping = ping_generic(edition, hostname, &state).await?;
+    Ok(PingElementTemplate {
         ping,
         root_url: state.root_url.to_string(),
     })

@@ -1,18 +1,27 @@
 {% extends "base.html" %}
 {% block description %}
-  mcping - ping {{ hostname }}
+mcping - ping {{ hostname }}
 {% endblock description %}
 {% block body %}
-  <div class="server-response" id="server-response">
-    <div class="server-response-stack">
-      <h1>Pinging <code>{{ hostname }}</code></h1>
+<div class="server-response">
+  <div class="server-response-stack">
+    <h1>Pinging <code>{{ hostname }}</code></h1>
+    <noscript>
       <iframe
         class="ping-frame"
         src="{{ root_url }}/internal/ping-frame/{{ edition }}/{{ hostname }}"
       ></iframe>
-      {% include "ping-form.html" %}
-    </div>
+    </noscript>
+    <div
+      id="response-fake-frame"
+      class="server-response-stack"
+      data-src="{{ root_url }}/internal/ping-markup/{{ edition }}/{{ hostname }}"
+    ></div>
+    <h2>Ping another?</h2>
+    {% include "ping-form.html" %}
   </div>
-  <div class="vspacer"></div>
-  {% include "api-status.html" %}
+</div>
+<script src="{{ root_url }}/ping.js"></script>
+<div class="vspacer"></div>
+{% include "api-status.html" %}
 {% endblock %}

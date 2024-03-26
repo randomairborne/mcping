@@ -3,30 +3,5 @@
   mcping - internal iframe
 {% endblock description %}
 {% block body %}
-  {% let icon %}
-  {% match ping.icon %}
-    {% when Some with (raw_icon) %}
-    {% let icon = "{}"|format(raw_icon) %}
-    {% when None %}
-    {% let icon = "{}/icon.png"|format(root_url) %}
-  {% endmatch %}
-  <div class="server-response" id="server-response">
-    <div class="server-response-stack">
-      <img
-        id="server-favicon"
-        height="256"
-        width="256"
-        alt="The pixel-art icon for this server."
-        src="{{ icon }}"
-      />
-      <div class="small-vspacer"></div>
-      <span class="server-online">Server online!</span>
-      <div id="server-latency">Ping: {{ ping.latency }}ms</div>
-      <div id="server-players">
-        Players: {{ ping.players.online }} / {{ ping.players.maximum }}
-      </div>
-      <div id="server-version">Version: {{ ping.version.broadcast }}</div>
-      <div id="server-motd">{{ ping.motd|mojang_colorize|safe }}</div>
-    </div>
-  </div>
+  {% include "ping-element.html" %}
 {% endblock %}
