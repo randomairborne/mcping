@@ -204,16 +204,11 @@ async fn ping_generic(
     let ping = match edition.as_str() {
         "java" => ping_java(hostname).await,
         "bedrock" => ping_bedrock(hostname).await,
-        _ => {
-            return Err(ErrorTemplate::from_failure(
-                &Failure::UnknownEdition,
-                &state,
-            ))
-        }
+        _ => return Err(ErrorTemplate::from_failure(&Failure::UnknownEdition, state)),
     };
     let ping = match ping {
         Ok(v) => v,
-        Err(e) => return Err(ErrorTemplate::from_failure(&e, &state)),
+        Err(e) => return Err(ErrorTemplate::from_failure(&e, state)),
     };
     Ok(ping)
 }
