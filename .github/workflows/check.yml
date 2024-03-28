@@ -22,3 +22,6 @@ jobs:
 
       - name: Check build
         run: cargo clippy
+
+      - name: Run tests
+        run: cargo test
