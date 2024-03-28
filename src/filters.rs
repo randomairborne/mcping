@@ -14,6 +14,9 @@ pub struct Span<'a> {
 
 impl<'a> Display for Span<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        if self.content.is_empty() {
+            return Ok(());
+        }
         f.write_str("<span class=\"")?;
         if let Some(color) = &self.color {
             f.write_str(color)?;
@@ -109,4 +112,105 @@ pub fn api_words<T: Display>(s: T) -> askama::Result<&'static str> {
         "DefiniteProblems" => "Down",
         _ => "Unknown",
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_api_words() {
+        assert_eq!(api_words("Operational").unwrap(), "OK");
+        assert_eq!(api_words("PossibleProblems").unwrap(), "Flaky");
+        assert_eq!(api_words("DefiniteProblems").unwrap(), "Down");
+        assert_eq!(api_words("operational").unwrap(), "Unknown");
+    }
+    #[test]
+    fn test_api_colors() {
+        assert_eq!(api_color("Operational").unwrap(), "green");
+        assert_eq!(api_color("PossibleProblems").unwrap(), "yellow");
+        assert_eq!(api_color("DefiniteProblems").unwrap(), "red");
+        assert_eq!(api_color("operational").unwrap(), "blue");
+    }
+    #[test]
+    fn test_span_no_color() {
+        let class = ["test".to_string()];
+        let span = Span::new(&class, None, "test content");
+        assert_eq!(
+            span.to_string(),
+            "<span class=\"test \">test content</span>"
+        );
+    }
+    #[test]
+    fn test_span_color_5() {
+        let class = ["test".to_string(), "test2".to_string()];
+        let span = Span::new(&class, Some("motd-style-5"), "test content");
+        assert_eq!(
+            span.to_string(),
+            "<span class=\"motd-style-5 test test2 \">test content</span>"
+        );
+    }
+    #[test]
+    fn test_span_empty_class() {
+        let class = [];
+        let span = Span::new(&class, Some("motd-style-5"), "test content");
+        assert_eq!(
+            span.to_string(),
+            "<span class=\"motd-style-5 \">test content</span>"
+        );
+    }
+    #[test]
+    fn test_span_empty_both() {
+        let class = [];
+        let span = Span::new(&class, None, "test content");
+        assert_eq!(span.to_string(), "<span class=\"\">test content</span>");
+    }
+    #[test]
+    fn test_span_escaping() {
+        let class = [];
+        let span = Span::new(&class, None, "<script>alert(\"bad\");</script>");
+        assert_eq!(
+            span.to_string(),
+            "<span class=\"\">&lt;script&gt;alert(&quot;bad&quot;);&lt;/script&gt;</span>"
+        );
+    }
+    #[test]
+    fn test_colorize_none() {
+        let input = "No color codes";
+        assert_eq!(
+            mojang_colorize(input).unwrap(),
+            "<span class=\"\">No color codes</span>"
+        );
+    }
+    #[test]
+    fn test_colorize_one_color() {
+        let input = "§acolor a";
+        assert_eq!(
+            mojang_colorize(input).unwrap(),
+            "<span class=\"motd-style-a \">color a</span>"
+        );
+    }
+    #[test]
+    fn test_colorize_color_immediate_change() {
+        let input = "§a§bcolor b";
+        assert_eq!(
+            mojang_colorize(input).unwrap(),
+            "<span class=\"motd-style-b \">color b</span>"
+        );
+    }
+    #[test]
+    fn test_colorize_color_reset() {
+        let input = "§acolor a§rblank§bcolor b";
+        assert_eq!(
+            mojang_colorize(input).unwrap(),
+            r#"<span class="motd-style-a ">color a</span><span class="">blank</span><span class="motd-style-b ">color b</span>"#
+        );
+    }
+    #[test]
+    fn test_colorize_additive() {
+        let input = "§a§nunderlined";
+        assert_eq!(
+            mojang_colorize(input).unwrap(),
+            r#"<span class="motd-style-a motd-style-n ">underlined</span>"#
+        );
+    }
 }
