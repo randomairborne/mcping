@@ -1,9 +1,0 @@
-version: "3.9"
-services:
-  mcping:
-    image: ghcr.io/randomairborne/mcping
-    restart: on-failure
-    ports:
-      - "9001:8080"
-    environment:
-      - LOG=${LOG}
