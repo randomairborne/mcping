@@ -21,6 +21,7 @@ axum-extra = "0.9"
 serde_json = "1"
 thiserror = "1"
 tracing = "0.1"
+tower = "0.4"
 vss = "0.1"
 
 [workspace]

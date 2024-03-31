@@ -24,6 +24,7 @@ use parking_lot::RwLock;
 use reqwest::{header::HeaderMap, redirect::Policy, Client};
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
+use tower::ServiceBuilder;
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -75,21 +76,25 @@ async fn main() {
         .precompressed_zstd()
         .fallback(handle_404.with_state(state.clone()));
     let app = Router::new()
-        .route("/", get(root))
-        .route_with_tsr("/api/", get(api_info))
-        .route_with_tsr("/ping/:edition/:hostname", get(ping_page))
         .route("/ping/redirect", get(ping_redirect))
-        .route("/internal/ping-frame/:edition/:hostname", get(ping_frame))
-        .route("/internal/ping-markup/:edition/:hostname", get(ping_markup))
         .route("/api/:address", get(handle_java_ping))
         .route("/api/java/:address", get(handle_java_ping))
         .route("/api/bedrock/:address", get(handle_bedrock_ping))
         .route("/api/java/", get(no_address))
         .route("/api/bedrock/", get(no_address))
         .route("/api/services", get(services::handle_mcstatus))
-        .layer(axum::middleware::from_fn(noindex_cache))
+        .layer(axum::middleware::from_fn(noindex))
+        .route("/", get(root))
+        .route_with_tsr("/api/", get(api_info))
+        .route_with_tsr("/ping/:edition/:hostname", get(ping_page))
+        .route("/internal/ping-frame/:edition/:hostname", get(ping_frame))
+        .route("/internal/ping-markup/:edition/:hostname", get(ping_markup))
         .fallback_service(serve_dir)
-        .layer(axum::middleware::from_fn(csp))
+        .layer(
+            ServiceBuilder::new()
+                .layer(axum::middleware::from_fn(csp))
+                .layer(axum::middleware::from_fn(cache)),
+        )
         .with_state(state);
     let socket_address = SocketAddr::from(([0, 0, 0, 0], port));
     let tcp = TcpListener::bind(socket_address).await.unwrap();
@@ -120,12 +125,10 @@ static CSP_VALUE: HeaderValue = HeaderValue::from_static(
     base-uri 'none';",
 );
 
-async fn noindex_cache(req: Request, next: Next) -> Response {
+async fn noindex(req: Request, next: Next) -> Response {
     let mut resp = next.run(req).await;
     resp.headers_mut()
         .insert(ROBOTS_NAME.clone(), ROBOTS_VALUE.clone());
-    resp.headers_mut()
-        .insert(CACHE_CONTROL, CACHE_CONTROL_AGE.clone());
     resp
 }
 
@@ -133,6 +136,13 @@ async fn csp(req: Request, next: Next) -> Response {
     let mut resp = next.run(req).await;
     resp.headers_mut()
         .insert(CONTENT_SECURITY_POLICY, CSP_VALUE.clone());
+    resp
+}
+
+async fn cache(req: Request, next: Next) -> Response {
+    let mut resp = next.run(req).await;
+    resp.headers_mut()
+        .insert(CACHE_CONTROL, CACHE_CONTROL_AGE.clone());
     resp
 }
 
