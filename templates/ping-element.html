@@ -1,9 +1,9 @@
 {% let icon %}
 {% match ping.icon %}
-{% when Some with (raw_icon) %}
-{% let icon = "{}"|format(raw_icon) %}
-{% when None %}
-{% let icon = "{}/icon.png"|format(root_url) %}
+  {% when Some with (raw_icon) %}
+  {% let icon = "{}"|format(raw_icon) %}
+  {% when None %}
+  {% let icon = "{}/icon.png"|format(root_url) %}
 {% endmatch %}
 <div class="server-response">
   <div class="server-response-stack">

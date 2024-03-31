@@ -5,6 +5,7 @@
   are having issues. All for free, without ads.
 {% endblock description %}
 {% block body %}
+  <script src="{{ root_url }}/index.js" defer></script>
   <h1>Minecraft Server Tester</h1>
   <div id="select-ping" class="execute-ping-container">
     {% include "ping-form.html" %}
@@ -19,5 +20,4 @@
   </div>
   <a href="/api/">API</a>
   <footer>{% include "api-status.html" %}</footer>
-  <script src="{{ root_url }}/index.js"></script>
 {% endblock body %}
