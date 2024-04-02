@@ -130,6 +130,7 @@ pre > code {
   flex-direction: column;
   width: fit-content;
   align-items: center;
+  min-height: 50vh;
 }
 
 .ip {

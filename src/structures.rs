@@ -28,16 +28,12 @@ pub struct XblStatusResponse {
 pub struct XblStatusStatus {
     #[serde(rename(deserialize = "Overall"))]
     pub overall: XblStatusStatusItem,
-    #[serde(rename(deserialize = "SelectedScenarios"))]
-    pub selected_scenarios: XblStatusStatusItem,
 }
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct XblStatusStatusItem {
     #[serde(rename(deserialize = "State"))]
     pub state: String,
-    #[serde(rename(deserialize = "Id"))]
-    pub id: i64,
 }
 
 #[allow(clippy::module_name_repetitions)]
@@ -55,14 +51,10 @@ pub struct XblStatusCoreService {
 pub struct XblStatusCoreServiceScenario {
     #[serde(rename(deserialize = "Id"))]
     pub id: i64,
-    #[serde(rename(deserialize = "Status"))]
-    pub status: XblStatusCoreServiceStatus,
 }
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct XblStatusCoreServiceStatus {
-    #[serde(rename(deserialize = "Name"))]
-    pub name: String,
     #[serde(rename(deserialize = "Id"))]
     pub id: i64,
 }
@@ -71,13 +63,6 @@ pub struct XblStatusCoreServiceStatus {
 pub struct MojangSessionServerStatus {
     pub id: String,
     pub name: String,
-    pub properties: Vec<MojangSessionServerProperties>,
-}
-
-#[derive(Deserialize, Clone, Debug)]
-pub struct MojangSessionServerProperties {
-    pub name: String,
-    pub value: String,
 }
 
 #[derive(Deserialize, Clone, Debug)]
