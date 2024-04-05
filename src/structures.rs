@@ -15,24 +15,22 @@ pub struct ServicesResponse {
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "PascalCase")]
 pub struct XblStatusResponse {
-    #[serde(rename(deserialize = "Status"))]
     pub status: XblStatusStatus,
-    #[serde(rename(deserialize = "CoreServices"))]
     pub core_services: Vec<XblStatusCoreService>,
-    #[serde(rename(deserialize = "Titles"))]
     pub titles: Vec<XblStatusCoreService>,
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "PascalCase")]
 pub struct XblStatusStatus {
-    #[serde(rename(deserialize = "Overall"))]
     pub overall: XblStatusStatusItem,
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "PascalCase")]
 pub struct XblStatusStatusItem {
-    #[serde(rename(deserialize = "State"))]
     pub state: String,
 }
 
@@ -48,14 +46,14 @@ pub struct XblStatusCoreService {
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "PascalCase")]
 pub struct XblStatusCoreServiceScenario {
-    #[serde(rename(deserialize = "Id"))]
     pub id: i64,
 }
 
 #[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "PascalCase")]
 pub struct XblStatusCoreServiceStatus {
-    #[serde(rename(deserialize = "Id"))]
     pub id: i64,
 }
 
