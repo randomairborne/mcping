@@ -8,11 +8,11 @@ use std::{
 };
 
 use async_trait::async_trait;
+use hickory_resolver::{config::*, TokioAsyncResolver};
 use tokio::{
     io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt},
     net::TcpStream,
 };
-use trust_dns_resolver::{config::*, TokioAsyncResolver};
 
 use crate::{java::Packet, tokio::AsyncPingable, Error, Java, JavaResponse};
 

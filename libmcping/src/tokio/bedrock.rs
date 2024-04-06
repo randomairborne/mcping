@@ -8,11 +8,11 @@ use std::{
 };
 
 use async_trait::async_trait;
+use hickory_resolver::{config::*, TokioAsyncResolver};
 use tokio::{
     io::{AsyncRead, AsyncReadExt, AsyncWriteExt},
     net::UdpSocket,
 };
-use trust_dns_resolver::{config::*, TokioAsyncResolver};
 
 use crate::{
     bedrock::{Packet, DEFAULT_PORT, OFFLINE_MESSAGE_DATA_ID},
