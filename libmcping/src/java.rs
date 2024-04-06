@@ -8,9 +8,9 @@ use std::{
 };
 
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
+use hickory_resolver::{config::*, Resolver};
 use serde::Deserialize;
 use thiserror::Error;
-use trust_dns_resolver::{config::*, Resolver};
 
 use crate::{Error, Pingable};
 

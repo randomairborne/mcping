@@ -9,7 +9,7 @@ use std::{
 };
 
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
-use trust_dns_resolver::{config::*, Resolver};
+use hickory_resolver::{config::*, Resolver};
 
 use crate::{Error, Pingable};
 
