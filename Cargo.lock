@@ -1089,7 +1089,6 @@ name = "libmcping"
 version = "0.2.0"
 dependencies = [
  "argh",
- "async-trait",
  "base64 0.22.0",
  "byteorder",
  "hickory-resolver",

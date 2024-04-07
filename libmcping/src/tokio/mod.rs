@@ -1,18 +1,16 @@
 mod bedrock;
 mod java;
 
-use async_trait::async_trait;
-
 use crate::Error;
 
 /// Represents a pingable entity.
-#[async_trait]
 pub trait AsyncPingable {
     /// The type of response that is expected in reply to the ping.
     type Response;
 
     /// Ping the entity, gathering the latency and response.
-    async fn ping(self) -> Result<(u64, Self::Response), Error>;
+    fn ping(self)
+        -> impl std::future::Future<Output = Result<(u64, Self::Response), Error>> + Send;
 }
 
 /// Retrieve the status of a given Minecraft server using a `AsyncPingable` configuration.

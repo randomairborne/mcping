@@ -7,7 +7,6 @@ use std::{
     time::{Duration, Instant},
 };
 
-use async_trait::async_trait;
 use hickory_resolver::{config::*, TokioAsyncResolver};
 use tokio::{
     io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt},
@@ -16,7 +15,6 @@ use tokio::{
 
 use crate::{java::Packet, tokio::AsyncPingable, Error, Java, JavaResponse};
 
-#[async_trait]
 impl AsyncPingable for Java {
     type Response = JavaResponse;
 
@@ -56,7 +54,6 @@ impl AsyncPingable for Java {
     }
 }
 
-#[async_trait]
 trait AsyncReadJavaExt: AsyncRead + AsyncReadExt + Unpin {
     async fn read_varint(&mut self) -> io::Result<i32> {
         let mut res = 0i32;
@@ -80,7 +77,6 @@ trait AsyncReadJavaExt: AsyncRead + AsyncReadExt + Unpin {
 
 impl<T> AsyncReadJavaExt for T where T: AsyncRead + AsyncReadExt + Unpin {}
 
-#[async_trait]
 trait AsyncWriteJavaExt: AsyncWrite + AsyncWriteExt + Unpin {
     async fn write_varint(&mut self, mut val: i32) -> io::Result<()> {
         for _ in 0..5 {

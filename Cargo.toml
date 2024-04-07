@@ -10,9 +10,9 @@ axum = { version = "0.7", features = ["tokio", "http1", "http2", "query"], defau
 tower-http = { version = "0.5", default-features = false, features = ["tracing", "fs"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-libmcping = { path = "libmcping", features = ["tokio-runtime"] }
 askama = { version = "0.12", features = ["with-axum"] }
 serde = { version = "1", features = ["derive"] }
+libmcping = { path = "./libmcping" }
 askama_escape = "0.10"
 parking_lot = "0.12"
 askama_axum = "0.4"

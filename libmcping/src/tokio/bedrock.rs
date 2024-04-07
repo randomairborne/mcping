@@ -7,7 +7,6 @@ use std::{
     time::{Duration, Instant},
 };
 
-use async_trait::async_trait;
 use hickory_resolver::{config::*, TokioAsyncResolver};
 use tokio::{
     io::{AsyncRead, AsyncReadExt, AsyncWriteExt},
@@ -20,7 +19,6 @@ use crate::{
     Bedrock, BedrockResponse, Error,
 };
 
-#[async_trait]
 impl AsyncPingable for Bedrock {
     type Response = BedrockResponse;
 
@@ -59,7 +57,6 @@ impl AsyncPingable for Bedrock {
 }
 
 /// Extension to `Read` and `ReadBytesExt` that supplies simple methods to write RakNet types.
-#[async_trait]
 trait AsyncReadBedrockExt: AsyncRead + AsyncReadExt + Unpin {
     /// Writes a Rust `String` in the form Raknet will respond to.
     ///
