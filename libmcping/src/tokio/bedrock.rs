@@ -7,7 +7,6 @@ use std::{
     time::{Duration, Instant},
 };
 
-use hickory_resolver::{config::*, TokioAsyncResolver};
 use tokio::{
     io::{AsyncRead, AsyncReadExt, AsyncWriteExt},
     net::UdpSocket,
@@ -94,8 +93,7 @@ impl Connection {
         };
 
         // Do a hostname lookup
-        let resolver =
-            TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default());
+        let resolver = super::resolver();
 
         let ip = resolver
             .lookup_ip(host.as_str())

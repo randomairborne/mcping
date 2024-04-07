@@ -7,7 +7,6 @@ use std::{
     time::{Duration, Instant},
 };
 
-use hickory_resolver::{config::*, TokioAsyncResolver};
 use tokio::{
     io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt},
     net::TcpStream,
@@ -122,8 +121,7 @@ impl Connection {
         };
 
         // Attempt to lookup the ip of the server from an srv record, falling back on the ip from a host
-        let resolver =
-            TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default());
+        let resolver = super::resolver();
 
         // Determine what host to lookup by doing the following:
         // - Lookup the SRV record for the domain, if it exists perform a lookup of the ip from the target

@@ -1,6 +1,13 @@
 mod bedrock;
 mod java;
 
+use std::sync::OnceLock;
+
+use hickory_resolver::{
+    config::{ResolverConfig, ResolverOpts},
+    TokioAsyncResolver,
+};
+
 use crate::Error;
 
 /// Represents a pingable entity.
@@ -51,4 +58,17 @@ pub trait AsyncPingable {
 /// ```
 pub async fn get_status<P: AsyncPingable>(pingable: P) -> Result<(u64, P::Response), Error> {
     pingable.ping().await
+}
+
+fn new_resolver() -> TokioAsyncResolver {
+    let config = ResolverConfig::cloudflare();
+    let mut opts = ResolverOpts::default();
+    opts.cache_size = 64;
+    opts.attempts = 3;
+    TokioAsyncResolver::tokio(config, opts)
+}
+
+pub fn resolver() -> &'static TokioAsyncResolver {
+    static RESOLVER: OnceLock<TokioAsyncResolver> = OnceLock::new();
+    RESOLVER.get_or_init(new_resolver)
 }
