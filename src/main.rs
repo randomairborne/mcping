@@ -46,6 +46,7 @@ async fn main() {
     let root_url = valk_utils::get_var("ROOT_URL");
     let root_url = root_url.trim_end_matches('/').to_owned();
     let port: u16 = std::env::var("PORT").map_or(DEFAULT_PORT, |v| v.parse().unwrap());
+
     let mut default_headers = HeaderMap::new();
     default_headers.insert("Accept", "application/json".parse().unwrap());
     let http_client = Client::builder()
@@ -59,6 +60,7 @@ async fn main() {
         .redirect(Policy::limited(100))
         .build()
         .unwrap();
+
     let current_mcstatus: Arc<RwLock<ServicesResponse>> =
         Arc::new(RwLock::new(get_mcstatus(http_client.clone()).await));
     tokio::spawn(refresh_mcstatus(http_client, Arc::clone(&current_mcstatus)));
@@ -96,6 +98,7 @@ async fn main() {
                 .layer(axum::middleware::from_fn(cache)),
         )
         .with_state(state);
+
     let socket_address = SocketAddr::from(([0, 0, 0, 0], port));
     let tcp = TcpListener::bind(socket_address).await.unwrap();
     axum::serve(tcp, app)
@@ -355,7 +358,12 @@ impl<T: Serialize> IntoResponse for Json<T> {
                 .as_bytes()
                 .to_vec()
         });
-        ([(CONTENT_TYPE, JSON_CTYPE.clone())], body).into_response()
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            [(CONTENT_TYPE, JSON_CTYPE.clone())],
+            body,
+        )
+            .into_response()
     }
 }
 
