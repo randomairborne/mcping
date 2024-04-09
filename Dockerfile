@@ -1,4 +1,4 @@
-FROM ghcr.io/randomairborne/asset-squisher AS client-builder
+FROM ghcr.io/randomairborne/asset-squisher:latest AS client-builder
 
 COPY /assets/ /uncompressed-assets/
 
@@ -20,7 +20,7 @@ RUN \
     --mount=type=cache,target=/usr/local/cargo/registry/ \
     cargo build --release && cp /build/target/release/mcping /build/mcping
 
-FROM alpine
+FROM alpine:latest
 
 WORKDIR /
 
