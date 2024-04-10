@@ -120,7 +120,7 @@ pub struct AppState {
 static ROBOTS_NAME: HeaderName = HeaderName::from_static("x-robots-tag");
 static ROBOTS_VALUE: HeaderValue = HeaderValue::from_static("noindex");
 static CACHE_CONTROL_IMMUTABLE: HeaderValue =
-    HeaderValue::from_static("immutable, public, max-age=604800");
+    HeaderValue::from_static("immutable, public, max-age=31536000");
 
 static CSP_VALUE: HeaderValue = HeaderValue::from_static(
     "default-src 'self'; \
