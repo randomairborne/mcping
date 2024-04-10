@@ -73,13 +73,17 @@ async fn main() {
         bust_dir: bust_dir.into(),
     };
 
-    let serve_dir = ServeDir::new(&asset_dir)
+    let serve_dir_raw = ServeDir::new(&asset_dir)
         .append_index_html_on_directories(true)
         .precompressed_gzip()
         .precompressed_br()
         .precompressed_deflate()
         .precompressed_zstd()
         .fallback(handle_404.with_state(state.clone()));
+    let serve_dir = ServiceBuilder::new()
+        .layer(axum::middleware::from_fn(noindex))
+        .layer(axum::middleware::from_fn(cache))
+        .service(serve_dir_raw);
     let app = Router::new()
         .route("/ping/redirect", get(ping_redirect))
         .route("/api/:address", get(handle_java_ping))
@@ -88,11 +92,7 @@ async fn main() {
         .route("/api/java/", get(no_address))
         .route("/api/bedrock/", get(no_address))
         .route("/api/services", get(services::handle_mcstatus))
-        .layer(
-            ServiceBuilder::new()
-                .layer(axum::middleware::from_fn(noindex))
-                .layer(axum::middleware::from_fn(cache)),
-        )
+        .layer(axum::middleware::from_fn(noindex))
         .route("/", get(root))
         .route_with_tsr("/api/", get(api_info))
         .route_with_tsr("/ping/:edition/:hostname", get(ping_page))
