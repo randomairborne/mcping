@@ -3,7 +3,10 @@
   mcping - ping {{ hostname }}
 {% endblock description %}
 {% block body %}
-  <script src="{{ root_url }}/ping.js" defer></script>
+  <script
+    src="{{ root_url }}/ping.js?cb={{ "/ping.js"|bust_dir(bd) }}"
+    defer
+  ></script>
   <div class="server-response">
     <div class="server-response-stack">
       <h1>Pinging <code>{{ hostname }}</code></h1>

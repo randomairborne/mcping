@@ -2,6 +2,7 @@ use std::fmt::{Display, Formatter, Write};
 
 use askama::Html;
 use askama_escape::Escaper;
+pub use bustdir::askama::bust_dir;
 
 const SECTION: char = '§';
 

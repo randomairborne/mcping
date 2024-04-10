@@ -5,7 +5,10 @@
   are having issues. All for free, without ads.
 {% endblock description %}
 {% block body %}
-  <script src="{{ root_url }}/index.js" defer></script>
+  <script
+    src="{{ root_url }}/index.js?cb={{ "/index.js"|bust_dir(bd) }}"
+    defer
+  ></script>
   <h1>Minecraft Server Tester</h1>
   <div id="select-ping" class="execute-ping-container">
     {% include "ping-form.html" %}

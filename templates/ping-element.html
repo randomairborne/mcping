@@ -3,7 +3,7 @@
   {% when Some with (raw_icon) %}
   {% let icon = "{}"|format(raw_icon) %}
   {% when None %}
-  {% let icon = "{}/icon.png"|format(root_url) %}
+  {% let icon = "{}/icon.png"|format(root_url)|bust_dir(bd) %}
 {% endmatch %}
 <div class="server-response">
   <div class="server-response-stack">

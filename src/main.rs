@@ -20,6 +20,7 @@ use axum::{
     Router,
 };
 use axum_extra::routing::RouterExt;
+use bustdir::BustDir;
 use parking_lot::RwLock;
 use reqwest::{header::HeaderMap, redirect::Policy, Client};
 use serde::{Deserialize, Serialize};
@@ -46,6 +47,7 @@ async fn main() {
     let root_url = valk_utils::get_var("ROOT_URL");
     let root_url = root_url.trim_end_matches('/').to_owned();
     let port: u16 = std::env::var("PORT").map_or(DEFAULT_PORT, |v| v.parse().unwrap());
+    let bust_dir = BustDir::new(&asset_dir).expect("Failed to build cache busting directory");
 
     let mut default_headers = HeaderMap::new();
     default_headers.insert("Accept", "application/json".parse().unwrap());
@@ -68,6 +70,7 @@ async fn main() {
     let state = AppState {
         svc_response: current_mcstatus,
         root_url: root_url.into(),
+        bust_dir: bust_dir.into(),
     };
 
     let serve_dir = ServeDir::new(&asset_dir)
@@ -85,18 +88,18 @@ async fn main() {
         .route("/api/java/", get(no_address))
         .route("/api/bedrock/", get(no_address))
         .route("/api/services", get(services::handle_mcstatus))
-        .layer(axum::middleware::from_fn(noindex))
+        .layer(
+            ServiceBuilder::new()
+                .layer(axum::middleware::from_fn(noindex))
+                .layer(axum::middleware::from_fn(cache)),
+        )
         .route("/", get(root))
         .route_with_tsr("/api/", get(api_info))
         .route_with_tsr("/ping/:edition/:hostname", get(ping_page))
         .route("/internal/ping-frame/:edition/:hostname", get(ping_frame))
         .route("/internal/ping-markup/:edition/:hostname", get(ping_markup))
         .fallback_service(serve_dir)
-        .layer(
-            ServiceBuilder::new()
-                .layer(axum::middleware::from_fn(csp))
-                .layer(axum::middleware::from_fn(cache)),
-        )
+        .layer(axum::middleware::from_fn(csp))
         .with_state(state);
 
     let socket_address = SocketAddr::from(([0, 0, 0, 0], port));
@@ -111,11 +114,13 @@ async fn main() {
 pub struct AppState {
     svc_response: Arc<RwLock<ServicesResponse>>,
     root_url: Arc<str>,
+    bust_dir: Arc<BustDir>,
 }
 
 static ROBOTS_NAME: HeaderName = HeaderName::from_static("x-robots-tag");
 static ROBOTS_VALUE: HeaderValue = HeaderValue::from_static("noindex");
-static CACHE_CONTROL_AGE: HeaderValue = HeaderValue::from_static("s-maxage=30");
+static CACHE_CONTROL_IMMUTABLE: HeaderValue =
+    HeaderValue::from_static("immutable, public, max-age=604800");
 
 static CSP_VALUE: HeaderValue = HeaderValue::from_static(
     "default-src 'self'; \
@@ -145,7 +150,7 @@ async fn csp(req: Request, next: Next) -> Response {
 async fn cache(req: Request, next: Next) -> Response {
     let mut resp = next.run(req).await;
     resp.headers_mut()
-        .insert(CACHE_CONTROL, CACHE_CONTROL_AGE.clone());
+        .insert(CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE.clone());
     resp
 }
 
@@ -153,13 +158,15 @@ async fn cache(req: Request, next: Next) -> Response {
 #[template(path = "index.html")]
 pub struct RootTemplate {
     svc_status: ServicesResponse,
-    root_url: String,
+    root_url: Arc<str>,
+    bd: Arc<BustDir>,
 }
 
 async fn root(State(state): State<AppState>) -> RootTemplate {
     RootTemplate {
         svc_status: *state.svc_response.read(),
-        root_url: state.root_url.to_string(),
+        root_url: state.root_url,
+        bd: state.bust_dir,
     }
 }
 
@@ -183,7 +190,8 @@ async fn ping_redirect(
 #[template(path = "ping-page.html")]
 pub struct PingPageTemplate {
     svc_status: ServicesResponse,
-    root_url: String,
+    root_url: Arc<str>,
+    bd: Arc<BustDir>,
     hostname: String,
     edition: String,
 }
@@ -203,7 +211,8 @@ async fn ping_page(
     }
     Ok(PingPageTemplate {
         svc_status: *state.svc_response.read(),
-        root_url: state.root_url.to_string(),
+        root_url: state.root_url,
+        bd: state.bust_dir,
         hostname,
         edition,
     })
@@ -230,7 +239,8 @@ async fn ping_generic(
 #[template(path = "ping-frame.html")]
 pub struct PingFrameTemplate {
     ping: MCPingResponse,
-    root_url: String,
+    bd: Arc<BustDir>,
+    root_url: Arc<str>,
 }
 
 async fn ping_frame(
@@ -240,7 +250,8 @@ async fn ping_frame(
     let ping = ping_generic(edition, hostname, &state).await?;
     Ok(PingFrameTemplate {
         ping,
-        root_url: state.root_url.to_string(),
+        root_url: state.root_url,
+        bd: state.bust_dir,
     })
 }
 
@@ -248,7 +259,8 @@ async fn ping_frame(
 #[template(path = "ping-element.html")]
 pub struct PingElementTemplate {
     ping: MCPingResponse,
-    root_url: String,
+    bd: Arc<BustDir>,
+    root_url: Arc<str>,
 }
 
 async fn ping_markup(
@@ -258,19 +270,22 @@ async fn ping_markup(
     let ping = ping_generic(edition, hostname, &state).await?;
     Ok(PingElementTemplate {
         ping,
-        root_url: state.root_url.to_string(),
+        bd: state.bust_dir,
+        root_url: state.root_url,
     })
 }
 
 #[derive(Template)]
 #[template(path = "api.html")]
 pub struct ApiTemplate {
-    root_url: String,
+    bd: Arc<BustDir>,
+    root_url: Arc<str>,
 }
 
 async fn api_info(State(state): State<AppState>) -> ApiTemplate {
     ApiTemplate {
-        root_url: state.root_url.to_string(),
+        root_url: state.root_url,
+        bd: state.bust_dir,
     }
 }
 
@@ -290,7 +305,8 @@ async fn no_address() -> Failure {
 async fn handle_404(State(state): State<AppState>) -> ErrorTemplate {
     ErrorTemplate {
         error: "404 not found".to_owned(),
-        root_url: state.root_url.to_string(),
+        bd: state.bust_dir,
+        root_url: state.root_url,
     }
 }
 
@@ -335,13 +351,15 @@ pub struct ErrorSerialization {
 #[template(path = "error.html")]
 pub struct ErrorTemplate {
     error: String,
-    root_url: String,
+    bd: Arc<BustDir>,
+    root_url: Arc<str>,
 }
 
 impl ErrorTemplate {
     fn from_failure(failure: &Failure, state: &AppState) -> Self {
         Self {
-            root_url: state.root_url.to_string(),
+            root_url: state.root_url.clone(),
+            bd: state.bust_dir.clone(),
             error: failure.to_string(),
         }
     }
