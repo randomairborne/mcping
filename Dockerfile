@@ -11,8 +11,6 @@ COPY . .
 
 RUN apk add musl-dev
 
-RUN echo $PATH
-
 RUN cargo version
 
 RUN \
