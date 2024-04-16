@@ -4,7 +4,11 @@ mod filters;
 mod services;
 mod structures;
 
-use std::{net::SocketAddr, sync::Arc, time::Duration};
+use std::{
+    net::{Ipv4Addr, SocketAddr},
+    sync::Arc,
+    time::Duration,
+};
 
 use askama::Template;
 use axum::{
@@ -62,9 +66,10 @@ async fn main() {
         .redirect(Policy::limited(100))
         .build()
         .unwrap();
-
+    info!("Fetching minecraft server status");
     let current_mcstatus: Arc<RwLock<ServicesResponse>> =
         Arc::new(RwLock::new(get_mcstatus(http_client.clone()).await));
+    info!(?current_mcstatus, "Got minecraft server status");
     tokio::spawn(refresh_mcstatus(http_client, Arc::clone(&current_mcstatus)));
 
     let state = AppState {
@@ -102,8 +107,9 @@ async fn main() {
         .layer(axum::middleware::from_fn(csp))
         .with_state(state);
 
-    let socket_address = SocketAddr::from(([0, 0, 0, 0], port));
+    let socket_address = SocketAddr::from((Ipv4Addr::UNSPECIFIED, port));
     let tcp = TcpListener::bind(socket_address).await.unwrap();
+    info!(?socket_address, "Listening on socket");
     axum::serve(tcp, app)
         .with_graceful_shutdown(vss::shutdown_signal())
         .await
