@@ -33,7 +33,14 @@ impl AsyncPingable for Java {
         conn.send_packet(Packet::Request {}).await?;
 
         let resp = match conn.read_packet().await? {
-            Packet::Response { response } => serde_json::from_str(&response)?,
+            Packet::Response { response } => {
+                tracing::trace!(
+                    response,
+                    "Got Minecraft: Java Edition ping response payload"
+                );
+
+                serde_json::from_str(&response)?
+            }
             _ => return Err(Error::InvalidPacket),
         };
 

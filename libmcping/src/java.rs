@@ -2,17 +2,13 @@
 //! https://wiki.vg/Server_List_Ping
 
 use std::{
-    io::{self, Cursor, Read, Write},
-    net::{IpAddr, SocketAddr, TcpStream},
-    time::{Duration, Instant},
+    io::{self, Read, Write},
+    time::Duration,
 };
 
-use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
-use hickory_resolver::{config::*, Resolver};
+use byteorder::{ReadBytesExt, WriteBytesExt};
 use serde::Deserialize;
 use thiserror::Error;
-
-use crate::{Error, Pingable};
 
 /// Configuration for pinging a Java server.
 ///
@@ -49,42 +45,23 @@ pub struct Java {
     pub timeout: Option<Duration>,
 }
 
-impl Pingable for Java {
-    type Response = JavaResponse;
+#[derive(Deserialize)]
+pub struct ForgeModMetadata {
+    pub modid: String,
+    pub version: String,
+}
 
-    fn ping(self) -> Result<(u64, Self::Response), crate::Error> {
-        let mut conn = Connection::new(&self.server_address, self.timeout)?;
+#[derive(Deserialize)]
+pub struct ForgeModInfoList {
+    #[serde(rename = "modList")]
+    pub mod_list: Vec<ForgeModMetadata>,
+}
 
-        // Handshake
-        conn.send_packet(Packet::Handshake {
-            version: 47,
-            host: conn.host.clone(),
-            port: conn.port,
-            next_state: 1,
-        })?;
-
-        // Request
-        conn.send_packet(Packet::Request {})?;
-
-        let resp = match conn.read_packet()? {
-            Packet::Response { response } => serde_json::from_str(&response)?,
-            _ => return Err(Error::InvalidPacket),
-        };
-
-        // Ping Request
-        let r = rand::random();
-        conn.send_packet(Packet::Ping { payload: r })?;
-
-        let before = Instant::now();
-        let ping = match conn.read_packet()? {
-            Packet::Pong { payload } if payload == r => {
-                (Instant::now() - before).as_millis() as u64
-            }
-            _ => return Err(Error::InvalidPacket),
-        };
-
-        Ok((ping, resp))
-    }
+#[derive(Deserialize)]
+#[serde(tag = "type")]
+pub enum ModInfo {
+    #[serde(rename = "FML")]
+    Fml(ForgeModInfoList),
 }
 
 /// The server status reponse
@@ -100,6 +77,14 @@ pub struct JavaResponse {
     pub description: Chat,
     /// The server icon (a Base64-encoded PNG image)
     pub favicon: Option<String>,
+    /// Mod information
+    pub modinfo: Option<ModInfo>,
+    /// Does this server enforce server signing?
+    #[serde(rename = "enforcesSecureChat")]
+    pub enforces_secure_chat: Option<bool>,
+    /// Does this server have chat previews?
+    #[serde(rename = "previewsChat")]
+    pub previews_chat: Option<bool>,
 }
 
 /// Information about the server's version
@@ -222,112 +207,4 @@ pub(crate) enum Packet {
     Ping {
         payload: u64,
     },
-}
-
-struct Connection {
-    stream: TcpStream,
-    host: String,
-    port: u16,
-}
-
-impl Connection {
-    fn new(address: &str, timeout: Option<Duration>) -> Result<Self, Error> {
-        // Split the address up into it's parts, saving the host and port for later and converting the
-        // potential domain into an ip
-        let mut parts = address.split(':');
-
-        let host = parts.next().ok_or(Error::InvalidAddress)?.to_string();
-
-        // If a port exists we want to try and parse it and if not we will
-        // default to 25565 (Minecraft)
-        let port = if let Some(port) = parts.next() {
-            port.parse::<u16>().map_err(|_| Error::InvalidAddress)?
-        } else {
-            25565
-        };
-
-        // Attempt to lookup the ip of the server from an srv record, falling back on the ip from a host
-        let resolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
-
-        // Determine what host to lookup by doing the following:
-        // - Lookup the SRV record for the domain, if it exists perform a lookup of the ip from the target
-        //   and grab the port pointed at by the record.
-        //
-        //   Note: trust_dns_resolver should do a recursive lookup for an ip but it doesn't seem to at
-        //   the moment.
-        //
-        // - If the above failed in any way fall back to the normal ip lookup from the host provided
-        //   and use the provided port.
-        let lookup_ip =
-            |host: &str| -> Option<IpAddr> { resolver.lookup_ip(host).ok()?.into_iter().next() };
-
-        let (ip, port) = resolver
-            .srv_lookup(format!("_minecraft._tcp.{}.", &host))
-            .ok()
-            .and_then(|lookup| {
-                let record = lookup.into_iter().next()?;
-                let ip = lookup_ip(&record.target().to_string())?;
-                Some((ip, record.port()))
-            })
-            .or_else(|| Some((lookup_ip(&host)?, port)))
-            .ok_or(Error::DnsLookupFailed)?;
-
-        let socket_addr = SocketAddr::new(ip, port);
-
-        Ok(Self {
-            stream: if let Some(timeout) = timeout {
-                TcpStream::connect_timeout(&socket_addr, timeout)?
-            } else {
-                TcpStream::connect(socket_addr)?
-            },
-            host,
-            port,
-        })
-    }
-
-    fn send_packet(&mut self, p: Packet) -> Result<(), Error> {
-        let mut buf = Vec::new();
-        match p {
-            Packet::Handshake {
-                version,
-                host,
-                port,
-                next_state,
-            } => {
-                buf.write_varint(0x00)?;
-                buf.write_varint(version)?;
-                buf.write_string(&host)?;
-                buf.write_u16::<BigEndian>(port)?;
-                buf.write_varint(next_state)?;
-            }
-            Packet::Request {} => {
-                buf.write_varint(0x00)?;
-            }
-            Packet::Ping { payload } => {
-                buf.write_varint(0x01)?;
-                buf.write_u64::<BigEndian>(payload)?;
-            }
-            _ => return Err(Error::InvalidPacket),
-        }
-        self.stream.write_varint(buf.len() as i32)?;
-        self.stream.write_all(&buf)?;
-        Ok(())
-    }
-
-    fn read_packet(&mut self) -> Result<Packet, Error> {
-        let len = self.stream.read_varint()?;
-        let mut buf = vec![0; len as usize];
-        self.stream.read_exact(&mut buf)?;
-        let mut c = Cursor::new(buf);
-
-        Ok(match c.read_varint()? {
-            0x00 => Packet::Response {
-                response: c.read_string()?,
-            },
-            0x01 => Packet::Pong {
-                payload: c.read_u64::<BigEndian>()?,
-            },
-            _ => return Err(Error::InvalidPacket),
-        })
-    }
 }

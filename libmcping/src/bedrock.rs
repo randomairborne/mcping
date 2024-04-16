@@ -2,16 +2,12 @@
 //! https://wiki.vg/Raknet_Protocol#Unconnected_Ping
 
 use std::{
-    io::{self, Cursor, Read},
-    net::{Ipv4Addr, SocketAddr, UdpSocket},
-    thread,
-    time::{Duration, Instant},
+    io::{self, Read},
+    net::{Ipv4Addr, SocketAddr},
+    time::Duration,
 };
 
-use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
-use hickory_resolver::{config::*, Resolver};
-
-use crate::{Error, Pingable};
+use byteorder::{BigEndian, ReadBytesExt};
 
 /// Raknets default OFFLINE_MESSAGE_DATA_ID.
 ///
@@ -79,43 +75,6 @@ impl Default for Bedrock {
                 SocketAddr::from((Ipv4Addr::new(0, 0, 0, 0), 25568)),
                 SocketAddr::from((Ipv4Addr::new(0, 0, 0, 0), 25569)),
             ],
-        }
-    }
-}
-
-impl Pingable for Bedrock {
-    type Response = BedrockResponse;
-
-    fn ping(self) -> Result<(u64, Self::Response), Error> {
-        let mut connection =
-            Connection::new(&self.server_address, &self.socket_addresses, self.timeout)?;
-
-        for _ in 0..self.tries {
-            connection.send(Packet::UnconnectedPing)?;
-
-            if let Some(wait) = self.wait_to_try {
-                thread::sleep(wait);
-            }
-        }
-
-        let before = Instant::now();
-        if let Packet::UnconnectedPong { payload, .. } = connection.read()? {
-            let latency = (Instant::now() - before).as_millis() as u64;
-
-            // Attempt to extract useful information from the payload.
-            if let Some(response) = BedrockResponse::extract(&payload) {
-                Ok((latency, response))
-            } else {
-                Err(Error::IoError(io::Error::new(
-                    io::ErrorKind::Other,
-                    "Invalid Payload",
-                )))
-            }
-        } else {
-            Err(Error::IoError(io::Error::new(
-                io::ErrorKind::Other,
-                "Invalid Packet Response",
-            )))
         }
     }
 }
@@ -254,101 +213,4 @@ pub(crate) enum Packet {
         server_id: u64,
         payload: String,
     },
-}
-
-/// Udp Socket Connection to a Raknet Bedrock Server.
-struct Connection {
-    socket: UdpSocket,
-}
-
-impl Connection {
-    fn new(
-        address: &str,
-        socket_addresses: &[SocketAddr],
-        timeout: Option<Duration>,
-    ) -> Result<Self, Error> {
-        let mut parts = address.split(':');
-
-        let host = parts.next().ok_or(Error::InvalidAddress)?.to_string();
-
-        let port = if let Some(port) = parts.next() {
-            port.parse::<u16>().map_err(|_| Error::InvalidAddress)?
-        } else {
-            DEFAULT_PORT
-        };
-
-        // Do a hostname lookup
-        let resolver = Resolver::new(ResolverConfig::default(), ResolverOpts::default()).unwrap();
-
-        let ip = resolver
-            .lookup_ip(host.as_str())
-            .ok()
-            .and_then(|ips| ips.iter().next())
-            .ok_or(Error::DnsLookupFailed)?;
-
-        let socket = UdpSocket::bind(socket_addresses)?;
-        socket.connect((ip, port))?;
-        socket.set_read_timeout(timeout)?;
-        socket.set_write_timeout(timeout)?;
-
-        Ok(Self { socket })
-    }
-
-    fn send(&mut self, packet: Packet) -> Result<(), io::Error> {
-        match packet {
-            Packet::UnconnectedPing => {
-                let mut buf = vec![0x01]; // Packet ID
-                buf.write_i64::<BigEndian>(0x00)?; // Timestamp
-                buf.extend_from_slice(OFFLINE_MESSAGE_DATA_ID); // MAGIC
-                buf.write_i64::<BigEndian>(0)?; // Client GUID
-
-                self.socket.send(&buf)?;
-            }
-            _ => {
-                return Err(io::Error::new(
-                    io::ErrorKind::Other,
-                    "Invalid C -> S Packet",
-                ))
-            }
-        }
-
-        Ok(())
-    }
-
-    fn read(&mut self) -> Result<Packet, io::Error> {
-        let mut buf = vec![0; 1024];
-        self.socket.recv(&mut buf)?;
-
-        let mut buf = Cursor::new(&buf);
-
-        match buf.read_u8()? {
-            0x1C => {
-                // time, server guid, MAGIC, server id
-                let time = buf.read_u64::<BigEndian>()?;
-                let server_id = buf.read_u64::<BigEndian>()?;
-
-                let mut tmp = [0; 16];
-                buf.read_exact(&mut tmp)?;
-
-                if tmp != OFFLINE_MESSAGE_DATA_ID {
-                    return Err(io::Error::new(
-                        io::ErrorKind::Other,
-                        "incorrect offline message data ID received",
-                    ));
-                }
-
-                let payload = buf.read_string()?;
-
-                Ok(Packet::UnconnectedPong {
-                    time,
-                    server_id,
-                    payload,
-                })
-            }
-            _ => Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Invalid S -> C Packet",
-            )),
-        }
-    }
 }
