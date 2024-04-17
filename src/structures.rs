@@ -83,6 +83,13 @@ pub struct MCPingResponse {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub icon: Option<String>,
     pub version: Version,
+    pub chat: ChatStatus,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Default)]
+pub struct ChatStatus {
+    pub preview: Option<bool>,
+    pub signing: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

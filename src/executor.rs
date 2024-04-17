@@ -4,7 +4,7 @@ use libmcping::{Bedrock, Java};
 use tokio::select;
 
 use crate::{
-    structures::{MCPingResponse, PlayerSample, Players, Version},
+    structures::{ChatStatus, MCPingResponse, PlayerSample, Players, Version},
     Failure,
 };
 
@@ -41,6 +41,10 @@ pub async fn ping_java(address: String) -> Result<MCPingResponse, Failure> {
             protocol: response.version.protocol,
             broadcast: response.version.name,
         },
+        chat: ChatStatus {
+            signing: response.enforces_secure_chat,
+            preview: response.previews_chat,
+        },
     })
 }
 
@@ -67,5 +71,6 @@ pub async fn ping_bedrock(address: String) -> Result<MCPingResponse, Failure> {
             protocol: response.protocol_version.unwrap_or(-1),
             broadcast: response.version_name,
         },
+        chat: ChatStatus::default(),
     })
 }
