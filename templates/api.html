@@ -1,28 +1,28 @@
 {% extends "base.html" %}
 {% block description %}
-  mcping - Minecraft Server and Mojang Services testing API. Programmatically
-  get the status of Minecraft servers, see why your players might not be able to
-  join, and more.
+mcping - Minecraft Server and Mojang Services testing API. Programmatically
+get the status of Minecraft servers, see why your players might not be able to
+join, and more.
 {% endblock description %}
 {% block body %}
-  <div class="api-body">
-    <h1>mcping API</h1>
-    <p>
-      The mcping API is very simple. There is a Java API at /api/java/, and a
-      bedrock api at /api/bedrock/. To specify what server to ping, you append
-      that server to the end of the URL, like so:
-      <a href="{{ root_url }}/api/java/mcping.me">/api/java/mcping.me</a>.
-    </p>
-    <p>
-      The response will look as below, with an "icon" base64 PNG field added if
-      the server has an icon. The latency is in milliseconds, from Toronto,
-      Canada. Keep in mind that some servers may use signcode colors for the
-      MOTD and player sample. Your application should handle this. The player
-      sample is often used for advertising, so take it with a grain of salt. The
-      Bedrock API response is the same, with the caveat of never returning the
-      icon. The bedrock player list may also be synthetic.
-    </p>
-    <pre><code id="examplePingResponse">{
+<div class="api-body">
+  <h1>mcping API</h1>
+  <p>
+    The mcping API is very simple. There is a Java API at /api/java/, and a
+    bedrock api at /api/bedrock/. To specify what server to ping, you append
+    that server to the end of the URL, like so:
+    <a href="{{ root_url }}/api/java/mcping.me">/api/java/mcping.me</a>.
+  </p>
+  <p>
+    The response will look as below, with an "icon" base64 PNG field added if
+    the server has an icon. The latency is in milliseconds, from Toronto,
+    Canada. Keep in mind that some servers may use signcode colors for the
+    MOTD and player sample. Your application should handle this. The player
+    sample is often used for advertising, so take it with a grain of salt. The
+    Bedrock API response is the same, with the caveat of never returning the
+    icon. The bedrock player list may also be synthetic.
+  </p>
+  <pre><code id="examplePingResponse">{
   "latency": 42,
   "players": {
     "online": 1,
@@ -38,29 +38,33 @@
   "version": {
     "protocol": 765,
     "broadcast": "1.20.4"
+  },
+  "chat": {
+    "preview": true,
+    "signing": true
   }
 }</code></pre>
-    <p>
-      There is also a Mojang Services API, at
-      <a href="{{ root_url }}/api/services">/api/services</a>. This is useful
-      for checking if the authservers or Xbox Services are having issues.
-      Example response below. The possible values for each field are
-      <code>DefiniteProblems</code>, <code>PossibleProblems</code>, and
-      <code>Operational</code>.
-    </p>
-    <pre><code class="language-json">{
+  <p>
+    There is also a Mojang Services API, at
+    <a href="{{ root_url }}/api/services">/api/services</a>. This is useful
+    for checking if the authservers or Xbox Services are having issues.
+    Example response below. The possible values for each field are
+    <code>DefiniteProblems</code>, <code>PossibleProblems</code>, and
+    <code>Operational</code>.
+  </p>
+  <pre><code class="language-json">{
   "Xbox services": "Operational",
   "SessionServer": "Operational",
   "Mojang API": "Operational",
   "Minecraft API": "Operational"
 }</code></pre>
-    <p>
-      You can also link to the ping page for any specific server. The format is
-      <code>{{ root_url }}/ping/&lt;edition&gt;/&lt;address&gt;</code>. For
-      example:
-      <a href="{{ root_url }}/ping/java/hypixel.net"
-        ><code>{{ root_url }}/ping/java/hypixel.net</code></a
-      >
-    </p>
-  </div>
+  <p>
+    You can also link to the ping page for any specific server. The format is
+    <code>{{ root_url }}/ping/&lt;edition&gt;/&lt;address&gt;</code>. For
+    example:
+    <a href="{{ root_url }}/ping/java/hypixel.net"
+    ><code>{{ root_url }}/ping/java/hypixel.net</code></a
+    >
+  </p>
+</div>
 {% endblock %}

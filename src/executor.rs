@@ -42,8 +42,8 @@ pub async fn ping_java(address: String) -> Result<MCPingResponse, Failure> {
             broadcast: response.version.name,
         },
         chat: ChatStatus {
-            signing: response.enforces_secure_chat,
-            preview: response.previews_chat,
+            signing: response.enforces_secure_chat.unwrap_or(false),
+            preview: response.previews_chat.unwrap_or(false),
         },
     })
 }

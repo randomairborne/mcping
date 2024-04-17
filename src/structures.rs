@@ -88,8 +88,8 @@ pub struct MCPingResponse {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Default)]
 pub struct ChatStatus {
-    pub preview: Option<bool>,
-    pub signing: Option<bool>,
+    pub preview: bool,
+    pub signing: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
