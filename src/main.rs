@@ -103,6 +103,7 @@ async fn main() {
         .route_with_tsr("/ping/:edition/:hostname", get(ping_page))
         .route("/internal/ping-frame/:edition/:hostname", get(ping_frame))
         .route("/internal/ping-markup/:edition/:hostname", get(ping_markup))
+        .layer(axum::middleware::from_fn(cache_short))
         .fallback_service(serve_dir)
         .layer(axum::middleware::from_fn(csp))
         .with_state(state);
@@ -127,6 +128,8 @@ static ROBOTS_NAME: HeaderName = HeaderName::from_static("x-robots-tag");
 static ROBOTS_VALUE: HeaderValue = HeaderValue::from_static("noindex");
 static CACHE_CONTROL_IMMUTABLE: HeaderValue =
     HeaderValue::from_static("immutable, public, max-age=31536000");
+static CACHE_CONTROL_SHORT: HeaderValue =
+    HeaderValue::from_static("max-age=30, public, stale-while-revalidate");
 
 static CSP_VALUE: HeaderValue = HeaderValue::from_static(
     "default-src 'self'; \
@@ -157,6 +160,13 @@ async fn cache(req: Request, next: Next) -> Response {
     let mut resp = next.run(req).await;
     resp.headers_mut()
         .insert(CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE.clone());
+    resp
+}
+
+async fn cache_short(req: Request, next: Next) -> Response {
+    let mut resp = next.run(req).await;
+    resp.headers_mut()
+        .insert(CACHE_CONTROL, CACHE_CONTROL_SHORT.clone());
     resp
 }
 
