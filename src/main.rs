@@ -24,6 +24,7 @@ use axum::{
     Router,
 };
 use axum_extra::routing::RouterExt;
+use base64::{alphabet::Alphabet, engine::GeneralPurpose, prelude::BASE64_STANDARD, Engine};
 use bustdir::BustDir;
 use parking_lot::RwLock;
 use reqwest::{header::HeaderMap, redirect::Policy, Client};
@@ -103,6 +104,10 @@ async fn main() {
         .route_with_tsr("/ping/:edition/:hostname", get(ping_page))
         .route("/internal/ping-frame/:edition/:hostname", get(ping_frame))
         .route("/internal/ping-markup/:edition/:hostname", get(ping_markup))
+        .route(
+            "/internal/icon/:edition/:hostname/icon.:ext",
+            get(ping_image),
+        )
         .layer(axum::middleware::from_fn(cache_short))
         .fallback_service(serve_dir)
         .layer(axum::middleware::from_fn(csp))
@@ -186,6 +191,20 @@ async fn root(State(state): State<AppState>) -> RootTemplate {
     }
 }
 
+#[derive(Template)]
+#[template(path = "api.html")]
+pub struct ApiTemplate {
+    bd: Arc<BustDir>,
+    root_url: Arc<str>,
+}
+
+async fn api_info(State(state): State<AppState>) -> ApiTemplate {
+    ApiTemplate {
+        root_url: state.root_url,
+        bd: state.bust_dir,
+    }
+}
+
 #[derive(Deserialize)]
 pub struct PingQuery {
     edition: String,
@@ -234,19 +253,11 @@ async fn ping_page(
     })
 }
 
-async fn ping_generic(
-    edition: String,
-    hostname: String,
-    state: &AppState,
-) -> Result<MCPingResponse, ErrorTemplate> {
-    let ping = match edition.as_str() {
-        "java" => ping_java(hostname).await,
-        "bedrock" => ping_bedrock(hostname).await,
-        _ => return Err(ErrorTemplate::from_failure(&Failure::UnknownEdition, state)),
-    };
-    let ping = match ping {
-        Ok(v) => v,
-        Err(e) => return Err(ErrorTemplate::from_failure(&e, state)),
+async fn ping_generic(edition: &str, hostname: String) -> Result<MCPingResponse, Failure> {
+    let ping = match edition {
+        "java" => ping_java(hostname).await?,
+        "bedrock" => ping_bedrock(hostname).await?,
+        _ => return Err(Failure::UnknownEdition),
     };
     Ok(ping)
 }
@@ -257,17 +268,23 @@ pub struct PingFrameTemplate {
     ping: MCPingResponse,
     bd: Arc<BustDir>,
     root_url: Arc<str>,
+    edition: String,
+    hostname: String,
 }
 
 async fn ping_frame(
     State(state): State<AppState>,
     Path((edition, hostname)): Path<(String, String)>,
 ) -> Result<PingFrameTemplate, ErrorTemplate> {
-    let ping = ping_generic(edition, hostname, &state).await?;
+    let ping = ping_generic(&edition, hostname.clone())
+        .await
+        .map_err(|v| v.as_error_template(&state))?;
     Ok(PingFrameTemplate {
         ping,
         root_url: state.root_url,
         bd: state.bust_dir,
+        edition,
+        hostname,
     })
 }
 
@@ -277,32 +294,48 @@ pub struct PingElementTemplate {
     ping: MCPingResponse,
     bd: Arc<BustDir>,
     root_url: Arc<str>,
+    edition: String,
+    hostname: String,
 }
 
 async fn ping_markup(
     State(state): State<AppState>,
     Path((edition, hostname)): Path<(String, String)>,
 ) -> Result<PingElementTemplate, ErrorTemplate> {
-    let ping = ping_generic(edition, hostname, &state).await?;
+    let ping = ping_generic(&edition, hostname.clone())
+        .await
+        .map_err(|v| v.as_error_template(&state))?;
     Ok(PingElementTemplate {
         ping,
         bd: state.bust_dir,
         root_url: state.root_url,
+        edition,
+        hostname,
     })
 }
 
-#[derive(Template)]
-#[template(path = "api.html")]
-pub struct ApiTemplate {
-    bd: Arc<BustDir>,
-    root_url: Arc<str>,
-}
-
-async fn api_info(State(state): State<AppState>) -> ApiTemplate {
-    ApiTemplate {
-        root_url: state.root_url,
-        bd: state.bust_dir,
-    }
+async fn ping_image(Path((edition, hostname)): Path<(String, String)>) -> Result<Png, StatusCode> {
+    const PREFIX_LEN: usize = "data:image/png;base64,".len();
+    debug!(edition, hostname, "Serving icon");
+    let ping = match ping_generic(&edition, hostname.clone()).await {
+        Ok(v) => v,
+        Err(e) => {
+            error!(error = ?e, "Encountered error decoding icon");
+            return Err(StatusCode::NOT_FOUND);
+        }
+    };
+    let Some(icon) = ping.icon else {
+        return Err(StatusCode::NOT_FOUND);
+    };
+    let cut_icon = icon.split_at(PREFIX_LEN).1;
+    let decoded = match BASE64_STANDARD.decode(cut_icon) {
+        Ok(v) => v,
+        Err(e) => {
+            error!(error = ?e, "Encountered error decoding icon");
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
+    Ok(Png(decoded))
 }
 
 async fn handle_java_ping(Path(address): Path<String>) -> Result<Json<MCPingResponse>, Failure> {
@@ -358,6 +391,13 @@ impl IntoResponse for Failure {
     }
 }
 
+impl Failure {
+    #[must_use]
+    pub fn as_error_template(&self, state: &AppState) -> ErrorTemplate {
+        ErrorTemplate::from_failure(self, state)
+    }
+}
+
 #[derive(Serialize)]
 pub struct ErrorSerialization {
     error: String,
@@ -398,6 +438,15 @@ impl<T: Serialize> IntoResponse for Json<T> {
             body,
         )
             .into_response()
+    }
+}
+
+pub struct Png(pub Vec<u8>);
+
+impl IntoResponse for Png {
+    fn into_response(self) -> Response {
+        let headers = [("Content-Type", "image/png")];
+        (headers, self.0).into_response()
     }
 }
 

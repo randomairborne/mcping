@@ -1,10 +1,10 @@
 {% let icon %}
 {% match ping.icon %}
-  {% when Some with (raw_icon) %}
-  {% let icon = "{}"|format(raw_icon) %}
-  {% when None %}
-  {% let icon_cb = "/icon.png"|bust_dir(bd) %}
-  {% let icon = "{}/icon.png?cb={}"|format(root_url, icon_cb) %}
+{% when Some with (raw_icon) %}
+{% let icon = "{}/internal/icon/{}/{}/icon.png"|format(root_url, edition, hostname) %}
+{% when None %}
+{% let icon_cb = "/icon.png"|bust_dir(bd) %}
+{% let icon = "{}/icon.png?cb={}"|format(root_url, icon_cb) %}
 {% endmatch %}
 <div class="server-response">
   <div class="server-response-stack">

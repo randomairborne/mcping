@@ -1249,6 +1249,7 @@ dependencies = [
  "askama_escape",
  "axum",
  "axum-extra",
+ "base64 0.22.0",
  "bustdir",
  "libmcping",
  "parking_lot",
