@@ -24,7 +24,7 @@ use axum::{
     Router,
 };
 use axum_extra::routing::RouterExt;
-use base64::{alphabet::Alphabet, engine::GeneralPurpose, prelude::BASE64_STANDARD, Engine};
+use base64::{prelude::BASE64_STANDARD, Engine};
 use bustdir::BustDir;
 use parking_lot::RwLock;
 use reqwest::{header::HeaderMap, redirect::Policy, Client};
