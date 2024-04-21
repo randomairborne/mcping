@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use libmcping::{Bedrock, Java};
+use pyng::{Bedrock, Java};
 use tokio::select;
 
 use crate::{
@@ -9,7 +9,7 @@ use crate::{
 };
 
 pub async fn ping_java(address: String) -> Result<MCPingResponse, Failure> {
-    let ping_future = libmcping::tokio::get_status(Java {
+    let ping_future = pyng::tokio::get_status(Java {
         server_address: address,
         timeout: Some(Duration::from_secs(1)),
     });
@@ -49,7 +49,7 @@ pub async fn ping_java(address: String) -> Result<MCPingResponse, Failure> {
 }
 
 pub async fn ping_bedrock(address: String) -> Result<MCPingResponse, Failure> {
-    let (latency, response) = libmcping::tokio::get_status(Bedrock {
+    let (latency, response) = pyng::tokio::get_status(Bedrock {
         server_address: address,
         timeout: Some(Duration::from_secs(5)),
         tries: 5,

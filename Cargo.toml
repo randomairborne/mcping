@@ -13,7 +13,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 askama = { version = "0.12", features = ["with-axum"] }
 bustdir = { version = "0.1", features = ["askama"] }
 serde = { version = "1", features = ["derive"] }
-libmcping = { path = "./libmcping" }
+pyng = { path = "pyng" }
 askama_escape = "0.10"
 parking_lot = "0.12"
 askama_axum = "0.4"
@@ -28,6 +28,6 @@ vss = "0.1"
 
 [workspace]
 members = [
-    "libmcping"
+    "pyng"
 ]
 

@@ -1142,25 +1142,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ec2a862134d2a7d32d7983ddcdd1c4923530833c9f2ea1a44fc5fa473989058"
 
 [[package]]
-name = "libmcping"
-version = "0.2.0"
-dependencies = [
- "argh",
- "base64 0.22.0",
- "byteorder",
- "hickory-resolver",
- "image 0.25.1",
- "mc-legacy-formatting",
- "rand",
- "serde",
- "serde_json",
- "thiserror",
- "tokio",
- "tracing",
- "viuer",
-]
-
-[[package]]
 name = "linked-hash-map"
 version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1258,8 +1239,8 @@ dependencies = [
  "axum-extra",
  "base64 0.22.0",
  "bustdir",
- "libmcping",
  "parking_lot",
+ "pyng",
  "reqwest",
  "serde",
  "serde_json",
@@ -1556,6 +1537,25 @@ checksum = "8021cf59c8ec9c432cfc2526ac6b8aa508ecaf29cd415f271b8406c1b851c3fd"
 dependencies = [
  "quote",
  "syn",
+]
+
+[[package]]
+name = "pyng"
+version = "0.2.0"
+dependencies = [
+ "argh",
+ "base64 0.22.0",
+ "byteorder",
+ "hickory-resolver",
+ "image 0.25.1",
+ "mc-legacy-formatting",
+ "rand",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "viuer",
 ]
 
 [[package]]

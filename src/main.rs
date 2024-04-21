@@ -362,7 +362,7 @@ async fn handle_404(State(state): State<AppState>) -> ErrorTemplate {
 #[derive(thiserror::Error, Debug)]
 pub enum Failure {
     #[error("Error connecting to the server")]
-    ConnectionFailed(#[from] libmcping::Error),
+    ConnectionFailed(#[from] pyng::Error),
     #[error("Timed out connecting to the server")]
     TimedOut,
     #[error("HTTP error")]
