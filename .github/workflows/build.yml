@@ -5,11 +5,15 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   check:
     uses: ./.github/workflows/check.yml
   build:
-    needs: [check]
+    needs: [ check ]
     runs-on: ubuntu-latest
     steps:
       - name: Correct env
@@ -38,10 +42,3 @@ jobs:
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: [build]
-    steps:
-      - name: Notify server of updates
-        run: "curl --max-time 30 -H 'Authorization: Bearer ${{ secrets.RESTART_TOKEN }}' https://hooks.valk.sh/mcping"
