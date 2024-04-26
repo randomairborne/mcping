@@ -79,6 +79,11 @@ async fn main() {
         bust_dir: bust_dir.into(),
     };
 
+    let cache_none = axum::middleware::from_fn(crate::cache_none);
+    let cache_medium = axum::middleware::from_fn(crate::cache_medium);
+    let cache_max = axum::middleware::from_fn(crate::cache_max);
+    let noindex = axum::middleware::from_fn(crate::noindex);
+
     let serve_dir_raw = ServeDir::new(&asset_dir)
         .append_index_html_on_directories(true)
         .precompressed_gzip()
@@ -87,29 +92,31 @@ async fn main() {
         .precompressed_zstd()
         .fallback(handle_404.with_state(state.clone()));
     let serve_dir = ServiceBuilder::new()
-        .layer(axum::middleware::from_fn(noindex))
-        .layer(axum::middleware::from_fn(cache))
+        .layer(noindex.clone())
+        .layer(cache_max.clone())
         .service(serve_dir_raw);
-    let app = Router::new()
-        .route("/ping/redirect", get(ping_redirect))
+    let api = Router::new()
         .route("/api/:address", get(handle_java_ping))
         .route("/api/java/:address", get(handle_java_ping))
         .route("/api/bedrock/:address", get(handle_bedrock_ping))
         .route("/api/java/", get(no_address))
         .route("/api/bedrock/", get(no_address))
         .route("/api/services", get(services::handle_mcstatus))
-        .layer(axum::middleware::from_fn(noindex))
+        .layer(noindex)
+        .layer(cache_none);
+    let app = Router::new()
         .route("/", get(root))
         .route_with_tsr("/api/", get(api_info))
+        .route("/ping/redirect", get(ping_redirect).layer(cache_max))
         .route_with_tsr("/ping/:edition/:hostname", get(ping_page))
         .route("/internal/ping-frame/:edition/:hostname", get(ping_frame))
         .route("/internal/ping-markup/:edition/:hostname", get(ping_markup))
         .route(
             "/internal/icon/:edition/:hostname/icon.:ext",
-            get(ping_image),
+            get(ping_image).layer(cache_medium),
         )
-        .layer(axum::middleware::from_fn(cache_short))
         .fallback_service(serve_dir)
+        .merge(api)
         .layer(axum::middleware::from_fn(csp))
         .with_state(state);
 
@@ -133,8 +140,9 @@ static ROBOTS_NAME: HeaderName = HeaderName::from_static("x-robots-tag");
 static ROBOTS_VALUE: HeaderValue = HeaderValue::from_static("noindex");
 static CACHE_CONTROL_IMMUTABLE: HeaderValue =
     HeaderValue::from_static("immutable, public, max-age=31536000");
-static CACHE_CONTROL_SHORT: HeaderValue =
-    HeaderValue::from_static("max-age=30, public, stale-while-revalidate");
+static CACHE_CONTROL_MEDIUM: HeaderValue =
+    HeaderValue::from_static("max-age=7200, public, stale-while-revalidate");
+static CACHE_CONTROL_NONE: HeaderValue = HeaderValue::from_static("max-age=0, no-store");
 
 static CSP_VALUE: HeaderValue = HeaderValue::from_static(
     "default-src 'self'; \
@@ -161,17 +169,24 @@ async fn csp(req: Request, next: Next) -> Response {
     resp
 }
 
-async fn cache(req: Request, next: Next) -> Response {
+async fn cache_max(req: Request, next: Next) -> Response {
     let mut resp = next.run(req).await;
     resp.headers_mut()
         .insert(CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE.clone());
     resp
 }
 
-async fn cache_short(req: Request, next: Next) -> Response {
+async fn cache_medium(req: Request, next: Next) -> Response {
     let mut resp = next.run(req).await;
     resp.headers_mut()
-        .insert(CACHE_CONTROL, CACHE_CONTROL_SHORT.clone());
+        .insert(CACHE_CONTROL, CACHE_CONTROL_MEDIUM.clone());
+    resp
+}
+
+async fn cache_none(req: Request, next: Next) -> Response {
+    let mut resp = next.run(req).await;
+    resp.headers_mut()
+        .insert(CACHE_CONTROL, CACHE_CONTROL_NONE.clone());
     resp
 }
 
