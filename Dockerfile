@@ -28,5 +28,5 @@ COPY --from=client-builder /assets/ /var/www/mcping/
 EXPOSE 8080
 ENV ASSET_DIR="/var/www/mcping/"
 
-ENTRYPOINT "/usr/bin/mcping"
+CMD ["/usr/bin/mcping"]
 
