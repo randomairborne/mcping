@@ -104,7 +104,7 @@ async fn main() {
         .route("/api/services", get(services::handle_mcstatus))
         .layer(noindex)
         .layer(cache_none);
-    let app = Router::new()
+    let router = Router::new()
         .route("/", get(root))
         .route_with_tsr("/api/", get(api_info))
         .route("/ping/redirect", get(ping_redirect).layer(cache_max))
@@ -123,7 +123,7 @@ async fn main() {
     let socket_address = SocketAddr::from((Ipv4Addr::UNSPECIFIED, port));
     let tcp = TcpListener::bind(socket_address).await.unwrap();
     info!(?socket_address, "Listening on socket");
-    axum::serve(tcp, app)
+    axum::serve(tcp, router)
         .with_graceful_shutdown(vss::shutdown_signal())
         .await
         .unwrap();
