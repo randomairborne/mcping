@@ -2,12 +2,9 @@
 //! https://wiki.vg/Raknet_Protocol#Unconnected_Ping
 
 use std::{
-    io::{self, Read},
     net::{Ipv4Addr, SocketAddr},
     time::Duration,
 };
-
-use byteorder::{BigEndian, ReadBytesExt};
 
 /// Raknets default OFFLINE_MESSAGE_DATA_ID.
 ///
@@ -184,22 +181,6 @@ impl BedrockResponse {
         })
     }
 }
-
-/// Extension to `Read` and `ReadBytesExt` that supplies simple methods to write RakNet types.
-trait ReadBedrockExt: Read + ReadBytesExt {
-    /// Writes a Rust `String` in the form Raknet will respond to.
-    ///
-    /// See more: https://wiki.vg/Raknet_Protocol#Data_types
-    fn read_string(&mut self) -> Result<String, io::Error> {
-        let len = self.read_u16::<BigEndian>()?;
-        let mut buf = vec![0; len as usize];
-        self.read_exact(&mut buf)?;
-        String::from_utf8(buf)
-            .map_err(|_| io::Error::new(io::ErrorKind::Other, "Invalid UTF-8 String."))
-    }
-}
-
-impl<T: Read + ReadBytesExt> ReadBedrockExt for T {}
 
 /// Represents a RakNet Unconnected Ping Protocol.
 #[derive(Debug)]

@@ -1,12 +1,8 @@
 //! Implementation of the Java Minecraft ping protocol.
 //! https://wiki.vg/Server_List_Ping
 
-use std::{
-    io::{self, Read, Write},
-    time::Duration,
-};
+use std::time::Duration;
 
-use byteorder::{ReadBytesExt, WriteBytesExt};
 use serde::Deserialize;
 use thiserror::Error;
 
@@ -137,51 +133,6 @@ impl Chat {
         }
     }
 }
-
-trait ReadJavaExt: Read + ReadBytesExt {
-    fn read_varint(&mut self) -> io::Result<i32> {
-        let mut res = 0i32;
-        for i in 0..5 {
-            let part = self.read_u8()?;
-            res |= (part as i32 & 0x7F) << (7 * i);
-            if part & 0x80 == 0 {
-                return Ok(res);
-            }
-        }
-        Err(io::Error::new(io::ErrorKind::Other, "VarInt too big!"))
-    }
-
-    fn read_string(&mut self) -> io::Result<String> {
-        let len = self.read_varint()? as usize;
-        let mut buf = vec![0; len];
-        self.read_exact(&mut buf)?;
-        Ok(String::from_utf8(buf).expect("Invalid UTF-8 String."))
-    }
-}
-
-impl<T> ReadJavaExt for T where T: Read + ReadBytesExt {}
-
-trait WriteJavaExt: Write + WriteBytesExt {
-    fn write_varint(&mut self, mut val: i32) -> io::Result<()> {
-        for _ in 0..5 {
-            if val & !0x7F == 0 {
-                self.write_u8(val as u8)?;
-                return Ok(());
-            }
-            self.write_u8((val & 0x7F | 0x80) as u8)?;
-            val >>= 7;
-        }
-        Err(io::Error::new(io::ErrorKind::Other, "VarInt too big!"))
-    }
-
-    fn write_string(&mut self, s: &str) -> io::Result<()> {
-        self.write_varint(s.len() as i32)?;
-        self.write_all(s.as_bytes())?;
-        Ok(())
-    }
-}
-
-impl<T> WriteJavaExt for T where T: Write + WriteBytesExt {}
 
 #[derive(Debug, Error)]
 #[error("invalid packet response `{packet:?}`")]
