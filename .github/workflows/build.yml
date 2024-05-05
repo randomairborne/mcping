@@ -13,7 +13,7 @@ jobs:
   check:
     uses: ./.github/workflows/check.yml
   build:
-    needs: [ check ]
+    needs: [check]
     runs-on: ubuntu-latest
     steps:
       - name: Correct env
@@ -38,7 +38,18 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ env.REPO }}:latest
+          tags: ghcr.io/${{ env.REPO }}:latest,ghcr.io/${{ env.REPO }}:git-${{ github.sha }}
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
+  deploy:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions-hub/kubectl@master
+        env:
+          KUBE_HOST: ${{ secrets.KUBE_HOST }}
+          KUBE_CERTIFICATE: ${{ secrets.KUBE_CERTIFICATE }}
+          KUBE_TOKEN: ${{ secrets.KUBE_TOKEN }}
+        with:
+          args: set image deployment/mcping mcping=ghcr.io/${{ env.REPO }}:git-${{ github.sha }}
