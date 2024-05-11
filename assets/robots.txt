@@ -1,4 +1,6 @@
-User-agent: *
+User-Agent: *
 Allow: /
+Disallow: /api/*
+Allow: /api/$
 
 Sitemap: https://mcping.me/sitemap.txt
