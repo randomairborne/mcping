@@ -467,7 +467,7 @@ impl IntoResponse for Png {
 
 fn start_tracing() {
     let env_filter = tracing_subscriber::EnvFilter::builder()
-        .with_default_directive(concat!(env!("CARGO_PKG_NAME"), "=info").parse().unwrap())
+        .with_default_directive(concat!(env!("CARGO_PKG_NAME"), "=debug").parse().unwrap())
         .with_env_var("LOG")
         .from_env()
         .expect("failed to parse env");
