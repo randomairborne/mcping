@@ -79,10 +79,10 @@ async fn main() {
         bust_dir: bust_dir.into(),
     };
 
-    let cache_none = axum::middleware::from_fn(crate::cache_none);
-    let cache_medium = axum::middleware::from_fn(crate::cache_medium);
-    let cache_max = axum::middleware::from_fn(crate::cache_max);
-    let noindex = axum::middleware::from_fn(crate::noindex);
+    let cache_none = axum::middleware::from_fn(cache_none);
+    let cache_medium = axum::middleware::from_fn(cache_medium);
+    let cache_max = axum::middleware::from_fn(cache_max);
+    let noindex = axum::middleware::from_fn(noindex);
 
     let serve_dir_raw = ServeDir::new(&asset_dir)
         .append_index_html_on_directories(true)
