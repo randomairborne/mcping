@@ -32,7 +32,7 @@ use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
 use tower_http::services::ServeDir;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use valuable::Valuable;
 
 use crate::{
     executor::{ping_bedrock, ping_java},
@@ -47,7 +47,7 @@ const DEFAULT_PORT: u16 = 8080;
 
 #[tokio::main]
 async fn main() {
-    start_tracing();
+    tracing_subscriber::fmt().json().init();
     let asset_dir = std::env::var("ASSET_DIR").unwrap_or_else(|_| "./assets/".to_owned());
     let root_url = valk_utils::get_var("ROOT_URL");
     let root_url = root_url.trim_end_matches('/').to_owned();
@@ -70,7 +70,10 @@ async fn main() {
     info!("Fetching minecraft server status");
     let current_mcstatus: Arc<RwLock<ServicesResponse>> =
         Arc::new(RwLock::new(get_mcstatus(http_client.clone()).await));
-    info!(?current_mcstatus, "Got minecraft server status");
+    info!(
+        status = current_mcstatus.read().as_value(),
+        "Got mojang service status"
+    );
     tokio::spawn(refresh_mcstatus(http_client, Arc::clone(&current_mcstatus)));
 
     let state = AppState {
@@ -463,16 +466,4 @@ impl IntoResponse for Png {
         let headers = [("Content-Type", "image/png")];
         (headers, self.0).into_response()
     }
-}
-
-fn start_tracing() {
-    let env_filter = tracing_subscriber::EnvFilter::builder()
-        .with_default_directive(concat!(env!("CARGO_PKG_NAME"), "=debug").parse().unwrap())
-        .with_env_var("LOG")
-        .from_env()
-        .expect("failed to parse env");
-    tracing_subscriber::registry()
-        .with(tracing_subscriber::fmt::layer())
-        .with(env_filter)
-        .init();
 }

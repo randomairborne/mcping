@@ -1,8 +1,9 @@
 use std::fmt::{Debug, Display};
 
 use serde::{Deserialize, Serialize, Serializer};
+use valuable::Valuable;
 
-#[derive(Serialize, Debug, Clone, Copy)]
+#[derive(Serialize, Valuable, Debug, Clone, Copy)]
 pub struct ServicesResponse {
     #[serde(rename(serialize = "Xbox services"))]
     pub xbox: Status,
@@ -14,7 +15,7 @@ pub struct ServicesResponse {
     pub minecraft_api: Status,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Valuable, Clone, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct XblStatusResponse {
     pub status: XblStatusStatus,
@@ -22,20 +23,20 @@ pub struct XblStatusResponse {
     pub titles: Vec<XblStatusCoreService>,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Valuable, Clone, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct XblStatusStatus {
     pub overall: XblStatusStatusItem,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Valuable, Clone, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct XblStatusStatusItem {
     pub state: String,
 }
 
 #[allow(clippy::module_name_repetitions)]
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Valuable, Clone, Debug)]
 pub struct XblStatusCoreService {
     #[serde(rename(deserialize = "Id"))]
     pub id: i64,
@@ -45,37 +46,37 @@ pub struct XblStatusCoreService {
     pub possible_scenarios: Vec<XblStatusCoreServiceScenario>,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Valuable, Clone, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct XblStatusCoreServiceScenario {
     pub id: i64,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Valuable, Clone, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct XblStatusCoreServiceStatus {
     pub id: i64,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Valuable, Clone, Debug)]
 pub struct MojangSessionServerStatus {
     pub id: String,
     pub name: String,
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Valuable, Clone, Debug)]
 pub struct MojangApiStatus {
     pub id: String,
     pub name: String,
 }
 
-#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Deserialize, Valuable, Clone, Debug, Eq, PartialEq)]
 pub struct MinecraftApiStatusEntry {
     pub id: String,
     pub name: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Valuable, Debug, Clone)]
 pub struct MCPingResponse {
     pub latency: u64,
     pub players: Players,
@@ -86,32 +87,32 @@ pub struct MCPingResponse {
     pub chat: ChatStatus,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, Default)]
+#[derive(Serialize, Deserialize, Valuable, Debug, Clone, Copy, Default)]
 pub struct ChatStatus {
     pub preview: bool,
     pub signing: bool,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Valuable, Debug, Clone)]
 pub struct Version {
     pub protocol: i64,
     pub broadcast: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Valuable, Debug, Clone)]
 pub struct Players {
     pub online: i64,
     pub maximum: i64,
     pub sample: Vec<PlayerSample>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Valuable, Debug, Clone)]
 pub struct PlayerSample {
     pub uuid: String,
     pub name: String,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Valuable)]
 pub enum Status {
     Operational,
     PossibleProblems,
