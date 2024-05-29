@@ -32,6 +32,7 @@ use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
 use tower_http::services::ServeDir;
+use tracing::Level;
 
 use crate::{
     executor::{ping_bedrock, ping_java},
@@ -46,7 +47,10 @@ const DEFAULT_PORT: u16 = 8080;
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt().json().init();
+    tracing_subscriber::fmt()
+        .with_max_level(Level::TRACE)
+        .json()
+        .init();
     let asset_dir = std::env::var("ASSET_DIR").unwrap_or_else(|_| "./assets/".to_owned());
     let root_url = valk_utils::get_var("ROOT_URL");
     let root_url = root_url.trim_end_matches('/').to_owned();
