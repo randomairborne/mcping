@@ -32,7 +32,6 @@ use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
 use tower_http::services::ServeDir;
-use valuable::Valuable;
 
 use crate::{
     executor::{ping_bedrock, ping_java},
@@ -71,7 +70,7 @@ async fn main() {
     let current_mcstatus: Arc<RwLock<ServicesResponse>> =
         Arc::new(RwLock::new(get_mcstatus(http_client.clone()).await));
     info!(
-        status = current_mcstatus.read().as_value(),
+        status = ?current_mcstatus.read(),
         "Got mojang service status"
     );
     tokio::spawn(refresh_mcstatus(http_client, Arc::clone(&current_mcstatus)));
