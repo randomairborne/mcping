@@ -4,7 +4,7 @@ use axum::extract::State;
 use parking_lot::RwLock;
 use reqwest::Client;
 use tokio::{join, select};
-use tracing_core::field::valuable;
+use valuable::Valuable;
 
 use crate::{
     structures::{
@@ -179,7 +179,7 @@ async fn get_minecraft(client: Client) -> Status {
     if data.as_slice() == expected {
         Status::Operational
     } else {
-        warn!(expected = ?expected, data = valuable(&data), "Got non-matching Minecraft API data");
+        warn!(expected = ?expected, data = data.as_value(), "Got non-matching Minecraft API data");
         Status::PossibleProblems
     }
 }
