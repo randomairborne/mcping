@@ -31,7 +31,10 @@ use reqwest::{header::HeaderMap, redirect::Policy, Client};
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
-use tower_http::services::ServeDir;
+use tower_http::{
+    services::ServeDir,
+    set_header::{SetResponseHeader, SetResponseHeaderLayer},
+};
 use tracing::Level;
 
 use crate::{
@@ -59,6 +62,7 @@ async fn main() {
 
     let mut default_headers = HeaderMap::new();
     default_headers.insert("Accept", "application/json".parse().unwrap());
+
     let http_client = Client::builder()
         .connect_timeout(Duration::from_secs(10))
         .default_headers(default_headers)
@@ -85,10 +89,15 @@ async fn main() {
         bust_dir: bust_dir.into(),
     };
 
-    let cache_none = axum::middleware::from_fn(cache_none);
-    let cache_medium = axum::middleware::from_fn(cache_medium);
-    let cache_max = axum::middleware::from_fn(cache_max);
-    let noindex = axum::middleware::from_fn(noindex);
+    let cache_none =
+        SetResponseHeaderLayer::overriding(CACHE_CONTROL.clone(), CACHE_CONTROL_NONE.clone());
+    let cache_medium =
+        SetResponseHeaderLayer::overriding(CACHE_CONTROL.clone(), CACHE_CONTROL_MEDIUM.clone());
+    let cache_max =
+        SetResponseHeaderLayer::overriding(CACHE_CONTROL.clone(), CACHE_CONTROL_IMMUTABLE.clone());
+    let noindex = SetResponseHeaderLayer::overriding(ROBOTS_NAME.clone(), ROBOTS_VALUE.clone());
+    let csp = SetResponseHeaderLayer::overriding(CONTENT_SECURITY_POLICY, CSP_VALUE.clone());
+    let clacks = SetResponseHeaderLayer::overriding(CLACKS_NAME.clone(), CLACKS_VALUE.clone());
 
     let serve_dir_raw = ServeDir::new(&asset_dir)
         .append_index_html_on_directories(true)
@@ -108,8 +117,7 @@ async fn main() {
         .route("/api/java/", get(no_address))
         .route("/api/bedrock/", get(no_address))
         .route("/api/services", get(services::handle_mcstatus))
-        .layer(noindex)
-        .layer(cache_none);
+        .layer(ServiceBuilder::new().layer(noindex).layer(cache_none));
     let router = Router::new()
         .route("/", get(root))
         .route_with_tsr("/api/", get(api_info))
@@ -123,7 +131,7 @@ async fn main() {
         )
         .fallback_service(serve_dir)
         .merge(api)
-        .layer(axum::middleware::from_fn(csp))
+        .layer(ServiceBuilder::new().layer(csp).layer(clacks))
         .with_state(state);
 
     let socket_address = SocketAddr::from((Ipv4Addr::UNSPECIFIED, port));
@@ -161,40 +169,8 @@ static CSP_VALUE: HeaderValue = HeaderValue::from_static(
     base-uri 'none';",
 );
 
-async fn noindex(req: Request, next: Next) -> Response {
-    let mut resp = next.run(req).await;
-    resp.headers_mut()
-        .insert(ROBOTS_NAME.clone(), ROBOTS_VALUE.clone());
-    resp
-}
-
-async fn csp(req: Request, next: Next) -> Response {
-    let mut resp = next.run(req).await;
-    resp.headers_mut()
-        .insert(CONTENT_SECURITY_POLICY, CSP_VALUE.clone());
-    resp
-}
-
-async fn cache_max(req: Request, next: Next) -> Response {
-    let mut resp = next.run(req).await;
-    resp.headers_mut()
-        .insert(CACHE_CONTROL, CACHE_CONTROL_IMMUTABLE.clone());
-    resp
-}
-
-async fn cache_medium(req: Request, next: Next) -> Response {
-    let mut resp = next.run(req).await;
-    resp.headers_mut()
-        .insert(CACHE_CONTROL, CACHE_CONTROL_MEDIUM.clone());
-    resp
-}
-
-async fn cache_none(req: Request, next: Next) -> Response {
-    let mut resp = next.run(req).await;
-    resp.headers_mut()
-        .insert(CACHE_CONTROL, CACHE_CONTROL_NONE.clone());
-    resp
-}
+static CLACKS_NAME: HeaderName = HeaderName::from_static("x-clacks-overhead");
+static CLACKS_VALUE: HeaderValue = HeaderValue::from_static("GNU Alexander \"Technoblade\"");
 
 #[derive(Template)]
 #[template(path = "index.html")]
