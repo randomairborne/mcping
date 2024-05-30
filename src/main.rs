@@ -30,10 +30,7 @@ use reqwest::{header::HeaderMap, redirect::Policy, Client};
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
-use tower_http::{
-    services::ServeDir,
-    set_header::{SetResponseHeaderLayer},
-};
+use tower_http::{services::ServeDir, set_header::SetResponseHeaderLayer};
 use tracing::Level;
 
 use crate::{
