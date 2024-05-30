@@ -12,13 +12,12 @@ use std::{
 
 use askama::Template;
 use axum::{
-    extract::{Path, Query, Request, State},
+    extract::{Path, Query, State},
     handler::Handler,
     http::{
         header::{CACHE_CONTROL, CONTENT_SECURITY_POLICY, CONTENT_TYPE},
         HeaderName, HeaderValue, StatusCode,
     },
-    middleware::Next,
     response::{IntoResponse, Redirect, Response},
     routing::get,
     Router,
@@ -33,7 +32,7 @@ use tokio::net::TcpListener;
 use tower::ServiceBuilder;
 use tower_http::{
     services::ServeDir,
-    set_header::{SetResponseHeader, SetResponseHeaderLayer},
+    set_header::{SetResponseHeaderLayer},
 };
 use tracing::Level;
 
