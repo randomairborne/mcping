@@ -438,7 +438,8 @@ pub struct Png(pub Vec<u8>);
 
 impl IntoResponse for Png {
     fn into_response(self) -> Response {
-        let headers = [("Content-Type", "image/png")];
+        static PNG_CTYPE: HeaderValue = HeaderValue::from_static("image/png");
+        let headers = [(CONTENT_TYPE, PNG_CTYPE.clone())];
         (headers, self.0).into_response()
     }
 }
