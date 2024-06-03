@@ -9,4 +9,3 @@
 A simple Minecraft server pinging service. Designed to work _everywhere_, on any device that supports HTML, with a super
 simple HTTP API. There is some javascript, but it is
 kept as minimal as possible.
-
