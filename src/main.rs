@@ -12,15 +12,17 @@ use std::{
 
 use askama::Template;
 use axum::{
-    extract::{Path, Query, State},
+    body::Body,
+    extract::{Path, Query, Request, State},
     handler::Handler,
     http::{
-        header::{CACHE_CONTROL, CONTENT_SECURITY_POLICY, CONTENT_TYPE},
+        header::{ACCEPT, CACHE_CONTROL, CONTENT_SECURITY_POLICY, CONTENT_TYPE},
         HeaderName, HeaderValue, StatusCode,
     },
+    middleware::Next,
     response::{IntoResponse, Redirect, Response},
     routing::get,
-    Router,
+    Extension, Router,
 };
 use axum_extra::routing::RouterExt;
 use base64::{prelude::BASE64_STANDARD, Engine};
@@ -94,6 +96,7 @@ async fn main() {
     let noindex = SetResponseHeaderLayer::overriding(ROBOTS_NAME.clone(), ROBOTS_VALUE.clone());
     let csp = SetResponseHeaderLayer::overriding(CONTENT_SECURITY_POLICY, CSP_VALUE.clone());
     let clacks = SetResponseHeaderLayer::overriding(CLACKS_NAME.clone(), CLACKS_VALUE.clone());
+    let error_handler = axum::middleware::from_fn_with_state(state.clone(), error_middleware);
 
     let serve_dir_raw = ServeDir::new(&asset_dir)
         .append_index_html_on_directories(true)
@@ -127,7 +130,12 @@ async fn main() {
         )
         .fallback_service(serve_dir)
         .merge(api)
-        .layer(ServiceBuilder::new().layer(csp).layer(clacks))
+        .layer(
+            ServiceBuilder::new()
+                .layer(csp)
+                .layer(clacks)
+                .layer(error_handler),
+        )
         .with_state(state);
 
     let socket_address = SocketAddr::from((Ipv4Addr::UNSPECIFIED, port));
@@ -227,15 +235,10 @@ pub struct PingPageTemplate {
 async fn ping_page(
     State(state): State<AppState>,
     Path((edition, hostname)): Path<(String, String)>,
-) -> Result<PingPageTemplate, ErrorTemplate> {
+) -> Result<PingPageTemplate, Failure> {
     match edition.as_str() {
         "java" | "bedrock" => {}
-        _ => {
-            return Err(ErrorTemplate::from_failure(
-                &Failure::UnknownEdition,
-                &state,
-            ))
-        }
+        _ => return Err(Failure::UnknownEdition),
     }
     Ok(PingPageTemplate {
         svc_status: *state.svc_response.read(),
@@ -268,10 +271,8 @@ pub struct PingFrameTemplate {
 async fn ping_frame(
     State(state): State<AppState>,
     Path((edition, hostname)): Path<(String, String)>,
-) -> Result<PingFrameTemplate, ErrorTemplate> {
-    let ping = ping_generic(&edition, hostname.clone())
-        .await
-        .map_err(|v| v.as_error_template(&state))?;
+) -> Result<PingFrameTemplate, Failure> {
+    let ping = ping_generic(&edition, hostname.clone()).await?;
     Ok(PingFrameTemplate {
         ping,
         root_url: state.root_url,
@@ -294,10 +295,8 @@ pub struct PingElementTemplate {
 async fn ping_markup(
     State(state): State<AppState>,
     Path((edition, hostname)): Path<(String, String)>,
-) -> Result<PingElementTemplate, ErrorTemplate> {
-    let ping = ping_generic(&edition, hostname.clone())
-        .await
-        .map_err(|v| v.as_error_template(&state))?;
+) -> Result<PingElementTemplate, Failure> {
+    let ping = ping_generic(&edition, hostname.clone()).await?;
     Ok(PingElementTemplate {
         ping,
         bd: state.bust_dir,
@@ -377,17 +376,7 @@ impl IntoResponse for Failure {
             Self::NoHostname | Self::UnknownEdition => StatusCode::BAD_REQUEST,
         };
         error!(error = ?self, "Error processing request");
-        let ser = ErrorSerialization {
-            error: self.to_string(),
-        };
-        (status, Json(ser)).into_response()
-    }
-}
-
-impl Failure {
-    #[must_use]
-    pub fn as_error_template(&self, state: &AppState) -> ErrorTemplate {
-        ErrorTemplate::from_failure(self, state)
+        (status, Extension(Arc::new(self)), Body::empty()).into_response()
     }
 }
 
@@ -404,27 +393,23 @@ pub struct ErrorTemplate {
     root_url: Arc<str>,
 }
 
-impl ErrorTemplate {
-    fn from_failure(failure: &Failure, state: &AppState) -> Self {
-        Self {
-            root_url: state.root_url.clone(),
-            bd: state.bust_dir.clone(),
-            error: failure.to_string(),
-        }
-    }
-}
+static HTML_CTYPE: HeaderValue = HeaderValue::from_static("text/html;charset=utf-8");
 
 pub struct Json<T: Serialize>(pub T);
 
+static JSON_CTYPE: HeaderValue = HeaderValue::from_static("application/json;charset=utf-8");
+
+fn infallible_json_serialize<T: Serialize>(data: &T) -> Vec<u8> {
+    serde_json::to_vec_pretty(data).unwrap_or_else(|_| {
+        r#"{"error": "JSON Serialization failed, please make a bug report"}"#
+            .as_bytes()
+            .to_vec()
+    })
+}
+
 impl<T: Serialize> IntoResponse for Json<T> {
     fn into_response(self) -> Response {
-        static JSON_CTYPE: HeaderValue = HeaderValue::from_static("application/json;charset=utf-8");
-
-        let body = serde_json::to_vec_pretty(&self.0).unwrap_or_else(|_| {
-            r#"{"error": "JSON Serialization failed, please make a bug report"}"#
-                .as_bytes()
-                .to_vec()
-        });
+        let body = infallible_json_serialize(&self.0);
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             [(CONTENT_TYPE, JSON_CTYPE.clone())],
@@ -432,6 +417,34 @@ impl<T: Serialize> IntoResponse for Json<T> {
         )
             .into_response()
     }
+}
+
+async fn error_middleware(State(state): State<AppState>, req: Request, next: Next) -> Response {
+    let json = req
+        .headers()
+        .get(ACCEPT)
+        .is_some_and(|v| v.to_str().is_ok_and(|v| v.contains("application/json")));
+    let mut resp = next.run(req).await;
+    if let Some(failure) = resp.extensions().get::<Arc<Failure>>().cloned() {
+        let error = failure.to_string();
+        if json {
+            resp.headers_mut().insert(CONTENT_TYPE, JSON_CTYPE.clone());
+            let error = ErrorSerialization { error };
+            let json = infallible_json_serialize(&error);
+            *resp.body_mut() = Body::from(json);
+        } else {
+            resp.headers_mut().insert(CONTENT_TYPE, HTML_CTYPE.clone());
+            let error = ErrorTemplate {
+                error,
+                bd: state.bust_dir,
+                root_url: state.root_url,
+            }
+            .render()
+            .unwrap_or_else(|e| format!("error rendering template: {e}"));
+            *resp.body_mut() = Body::from(error);
+        };
+    }
+    resp
 }
 
 pub struct Png(pub Vec<u8>);
