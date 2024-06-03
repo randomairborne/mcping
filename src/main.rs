@@ -16,7 +16,7 @@ use axum::{
     extract::{Path, Query, Request, State},
     handler::Handler,
     http::{
-        header::{ACCEPT, CACHE_CONTROL, CONTENT_SECURITY_POLICY, CONTENT_TYPE},
+        header::{ACCEPT, CACHE_CONTROL, CONTENT_LENGTH, CONTENT_SECURITY_POLICY, CONTENT_TYPE},
         HeaderName, HeaderValue, StatusCode,
     },
     middleware::Next,
@@ -427,22 +427,25 @@ async fn error_middleware(State(state): State<AppState>, req: Request, next: Nex
     let mut resp = next.run(req).await;
     if let Some(failure) = resp.extensions().get::<Arc<Failure>>().cloned() {
         let error = failure.to_string();
-        if json {
+        let body = if json {
             resp.headers_mut().insert(CONTENT_TYPE, JSON_CTYPE.clone());
             let error = ErrorSerialization { error };
-            let json = infallible_json_serialize(&error);
-            *resp.body_mut() = Body::from(json);
+            infallible_json_serialize(&error)
         } else {
             resp.headers_mut().insert(CONTENT_TYPE, HTML_CTYPE.clone());
             let error = ErrorTemplate {
                 error,
                 bd: state.bust_dir,
                 root_url: state.root_url,
-            }
-            .render()
-            .unwrap_or_else(|e| format!("error rendering template: {e}"));
-            *resp.body_mut() = Body::from(error);
+            };
+            error
+                .render()
+                .unwrap_or_else(|e| format!("error rendering template: {e}"))
+                .into_bytes()
         };
+        resp.headers_mut()
+            .insert(CONTENT_LENGTH, HeaderValue::from(body.len()));
+        *resp.body_mut() = Body::from(body);
     }
     resp
 }
