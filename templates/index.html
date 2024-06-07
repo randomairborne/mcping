@@ -5,10 +5,6 @@
   are having issues. All for free, without ads.
 {% endblock description %}
 {% block body %}
-  <script
-    src="{{ root_url }}/index.js?cb={{ "/index.js"|bust_dir(bd) }}"
-    defer
-  ></script>
   <h1>Minecraft Server Tester</h1>
   <div id="select-ping" class="execute-ping-container">
     {% include "ping-form.html" %}
@@ -22,5 +18,39 @@
     </div>
   </div>
   <a href="/api/">API</a>
+  <script nonce="{{ nonce }}">
+    const ipElement = document.getElementById("user-ip");
+    const ipMsgElement = document.getElementById("ip-msg");
+    const ipDescriptorElement = document.getElementById("ip-descriptor");
+
+    function ipClick() {
+      ipElement.hidden = !ipElement.hidden;
+      ipMsgElement.hidden = !ipMsgElement.hidden;
+    }
+
+    ipElement.addEventListener("click", ipClick);
+    ipMsgElement.addEventListener("click", ipClick);
+    ipDescriptorElement.addEventListener("click", ipClick);
+
+    fetch("https://v4.giveip.io/raw")
+      .then((rsp) => rsp.text())
+      .then((s) => {
+        ipElement.innerText = s.trim();
+      });
+
+    async function doAutoPing() {
+      let windowHash = window.location.hash.substring(1);
+      let [actionString, edition, hostname] = windowHash.split(";", 3);
+      if (actionString === "ping") {
+        if (edition.startsWith("b")) {
+          window.location.pathname = `/ping/bedrock/${hostname}`;
+        } else if (edition.startsWith("j")) {
+          window.location.pathname = `/ping/java/${hostname}`;
+        }
+      }
+    }
+
+    doAutoPing().then(() => {});
+  </script>
   <footer>{% include "api-status.html" %}</footer>
 {% endblock body %}

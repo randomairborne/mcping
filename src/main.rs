@@ -16,13 +16,13 @@ use axum::{
     extract::{Path, Query, Request, State},
     handler::Handler,
     http::{
-        header::{ACCEPT, CACHE_CONTROL, CONTENT_LENGTH, CONTENT_SECURITY_POLICY, CONTENT_TYPE},
+        header::{ACCEPT, CACHE_CONTROL, CONTENT_LENGTH, CONTENT_TYPE},
         HeaderName, HeaderValue, StatusCode,
     },
     middleware::Next,
     response::{IntoResponse, Redirect, Response},
     routing::get,
-    Extension, Router,
+    Extension, RequestExt, Router,
 };
 use axum_extra::routing::RouterExt;
 use base64::{prelude::BASE64_STANDARD, Engine};
@@ -33,6 +33,11 @@ use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
 use tower::ServiceBuilder;
 use tower_http::{services::ServeDir, set_header::SetResponseHeaderLayer};
+use tower_sombrero::{
+    csp::CspNonce,
+    headers::{ContentSecurityPolicy, CspSchemeSource, CspSource},
+    Sombrero,
+};
 use tracing::Level;
 
 use crate::{
@@ -94,8 +99,11 @@ async fn main() {
     let cache_max =
         SetResponseHeaderLayer::overriding(CACHE_CONTROL.clone(), CACHE_CONTROL_IMMUTABLE.clone());
     let noindex = SetResponseHeaderLayer::overriding(ROBOTS_NAME.clone(), ROBOTS_VALUE.clone());
-    let csp = SetResponseHeaderLayer::overriding(CONTENT_SECURITY_POLICY, CSP_VALUE.clone());
     let clacks = SetResponseHeaderLayer::overriding(CLACKS_NAME.clone(), CLACKS_VALUE.clone());
+
+    let csp = get_csp();
+    let sombrero = Sombrero::default().content_security_policy(csp);
+
     let error_handler = axum::middleware::from_fn_with_state(state.clone(), error_middleware);
 
     let serve_dir_raw = ServeDir::new(&asset_dir)
@@ -132,7 +140,7 @@ async fn main() {
         .merge(api)
         .layer(
             ServiceBuilder::new()
-                .layer(csp)
+                .layer(sombrero)
                 .layer(clacks)
                 .layer(error_handler),
         )
@@ -145,6 +153,29 @@ async fn main() {
         .with_graceful_shutdown(vss::shutdown_signal())
         .await
         .unwrap();
+}
+
+fn get_csp() -> ContentSecurityPolicy {
+    ContentSecurityPolicy::new_empty()
+        .upgrade_insecure_requests(true)
+        .default_src(CspSource::SelfOrigin)
+        .frame_src(CspSource::SelfOrigin)
+        .object_src(CspSource::None)
+        .base_uri(CspSource::None)
+        .style_src(CspSource::Nonce)
+        .img_src([CspSource::SelfOrigin, CspSchemeSource::Data.into()])
+        .connect_src([
+            CspSource::SelfOrigin,
+            CspSource::Host("https://v4.giveip.io".to_string()),
+            CspSource::Host("cloudflareinsights.com".to_string()),
+        ])
+        .script_src([
+            CspSource::StrictDynamic,
+            CspSource::Nonce,
+            CspSource::UnsafeInline,
+            CspSchemeSource::Http.into(),
+            CspSchemeSource::Https.into(),
+        ])
 }
 
 #[derive(Clone)]
@@ -162,17 +193,6 @@ static CACHE_CONTROL_MEDIUM: HeaderValue =
     HeaderValue::from_static("max-age=7200, public, stale-while-revalidate");
 static CACHE_CONTROL_NONE: HeaderValue = HeaderValue::from_static("max-age=0, no-store");
 
-static CSP_VALUE: HeaderValue = HeaderValue::from_static(
-    "default-src 'self'; \
-    frame-src 'self'; \
-    img-src 'self' data:; \
-    connect-src 'self' https://v4.giveip.io; \
-    script-src 'self' https://static.cloudflareinsights.com; \
-    style-src 'self'; \
-    object-src 'none'; \
-    base-uri 'none';",
-);
-
 static CLACKS_NAME: HeaderName = HeaderName::from_static("x-clacks-overhead");
 static CLACKS_VALUE: HeaderValue = HeaderValue::from_static("GNU Alexander \"Technoblade\"");
 
@@ -182,13 +202,15 @@ pub struct RootTemplate {
     svc_status: ServicesResponse,
     root_url: Arc<str>,
     bd: Arc<BustDir>,
+    nonce: String,
 }
 
-async fn root(State(state): State<AppState>) -> RootTemplate {
+async fn root(State(state): State<AppState>, CspNonce(nonce): CspNonce) -> RootTemplate {
     RootTemplate {
         svc_status: *state.svc_response.read(),
         root_url: state.root_url,
         bd: state.bust_dir,
+        nonce,
     }
 }
 
@@ -197,12 +219,14 @@ async fn root(State(state): State<AppState>) -> RootTemplate {
 pub struct ApiTemplate {
     bd: Arc<BustDir>,
     root_url: Arc<str>,
+    nonce: String,
 }
 
-async fn api_info(State(state): State<AppState>) -> ApiTemplate {
+async fn api_info(State(state): State<AppState>, CspNonce(nonce): CspNonce) -> ApiTemplate {
     ApiTemplate {
         root_url: state.root_url,
         bd: state.bust_dir,
+        nonce,
     }
 }
 
@@ -230,10 +254,12 @@ pub struct PingPageTemplate {
     bd: Arc<BustDir>,
     hostname: String,
     edition: String,
+    nonce: String,
 }
 
 async fn ping_page(
     State(state): State<AppState>,
+    CspNonce(nonce): CspNonce,
     Path((edition, hostname)): Path<(String, String)>,
 ) -> Result<PingPageTemplate, Failure> {
     match edition.as_str() {
@@ -246,6 +272,7 @@ async fn ping_page(
         bd: state.bust_dir,
         hostname,
         edition,
+        nonce,
     })
 }
 
@@ -266,10 +293,12 @@ pub struct PingFrameTemplate {
     root_url: Arc<str>,
     edition: String,
     hostname: String,
+    nonce: String,
 }
 
 async fn ping_frame(
     State(state): State<AppState>,
+    CspNonce(nonce): CspNonce,
     Path((edition, hostname)): Path<(String, String)>,
 ) -> Result<PingFrameTemplate, Failure> {
     let ping = ping_generic(&edition, hostname.clone()).await?;
@@ -279,6 +308,7 @@ async fn ping_frame(
         bd: state.bust_dir,
         edition,
         hostname,
+        nonce,
     })
 }
 
@@ -343,11 +373,12 @@ async fn no_address() -> Failure {
 }
 
 #[allow(clippy::unused_async)]
-async fn handle_404(State(state): State<AppState>) -> ErrorTemplate {
+async fn handle_404(State(state): State<AppState>, CspNonce(nonce): CspNonce) -> ErrorTemplate {
     ErrorTemplate {
         error: "404 not found".to_owned(),
         bd: state.bust_dir,
         root_url: state.root_url,
+        nonce,
     }
 }
 
@@ -391,6 +422,7 @@ pub struct ErrorTemplate {
     error: String,
     bd: Arc<BustDir>,
     root_url: Arc<str>,
+    nonce: String,
 }
 
 static HTML_CTYPE: HeaderValue = HeaderValue::from_static("text/html;charset=utf-8");
@@ -419,11 +451,15 @@ impl<T: Serialize> IntoResponse for Json<T> {
     }
 }
 
-async fn error_middleware(State(state): State<AppState>, req: Request, next: Next) -> Response {
+async fn error_middleware(State(state): State<AppState>, mut req: Request, next: Next) -> Response {
     let json = req
         .headers()
         .get(ACCEPT)
         .is_some_and(|v| v.to_str().is_ok_and(|v| v.contains("application/json")));
+    let nonce = match req.extract_parts::<CspNonce>().await {
+        Ok(CspNonce(n)) => n,
+        Err(err) => return err.into_response(),
+    };
     let mut resp = next.run(req).await;
     if let Some(failure) = resp.extensions().get::<Arc<Failure>>().cloned() {
         let error = failure.to_string();
@@ -437,6 +473,7 @@ async fn error_middleware(State(state): State<AppState>, req: Request, next: Nex
                 error,
                 bd: state.bust_dir,
                 root_url: state.root_url,
+                nonce,
             };
             error
                 .render()

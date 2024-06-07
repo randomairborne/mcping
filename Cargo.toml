@@ -10,6 +10,7 @@ tower-http = { version = "0.5", default-features = false, features = ["tracing",
 axum = { version = "0.7", features = ["tokio", "http1", "http2", "query"], default-features = false }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal"] }
 tracing-subscriber = { version = "0.3", features = ["json"] }
+tower-sombrero = { version = "0.0.4", features = ["axum"] }
 askama = { version = "0.12", features = ["with-axum"] }
 bustdir = { version = "0.1", features = ["askama"] }
 serde = { version = "1", features = ["derive"] }

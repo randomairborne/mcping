@@ -3,10 +3,6 @@
   mcping - ping {{ hostname }}
 {% endblock description %}
 {% block body %}
-  <script
-    src="{{ root_url }}/ping.js?cb={{ "/ping.js"|bust_dir(bd) }}"
-    defer
-  ></script>
   <div class="server-response">
     <div class="server-response-stack">
       <h1>Pinging <code>{{ hostname }}</code></h1>
@@ -25,6 +21,16 @@
       {% include "ping-form.html" %}
     </div>
   </div>
+  <script nonce="{{ nonce }}">
+    const frame = document.getElementById("response-fake-frame");
+
+    async function load() {
+      const req = await fetch(frame.dataset.src);
+      frame.innerHTML = await req.text();
+    }
+
+    load().then(() => {});
+  </script>
   <div class="vspacer"></div>
   {% include "api-status.html" %}
 {% endblock %}
