@@ -16,13 +16,13 @@ use axum::{
     extract::{Path, Query, Request, State},
     handler::Handler,
     http::{
-        header::{ACCEPT, CACHE_CONTROL, CONTENT_LENGTH, CONTENT_TYPE},
+        header::{ACCEPT, CACHE_CONTROL, CONTENT_TYPE},
         HeaderName, HeaderValue, StatusCode,
     },
     middleware::Next,
     response::{IntoResponse, Redirect, Response},
     routing::get,
-    Extension, RequestExt, Router,
+    Extension, Router,
 };
 use axum_extra::routing::RouterExt;
 use base64::{prelude::BASE64_STANDARD, Engine};
@@ -451,22 +451,24 @@ impl<T: Serialize> IntoResponse for Json<T> {
     }
 }
 
-async fn error_middleware(State(state): State<AppState>, mut req: Request, next: Next) -> Response {
+async fn error_middleware(
+    State(state): State<AppState>,
+    CspNonce(nonce): CspNonce,
+    req: Request,
+    next: Next,
+) -> Response {
     let json = req
         .headers()
         .get(ACCEPT)
         .is_some_and(|v| v.to_str().is_ok_and(|v| v.contains("application/json")));
-    let nonce = match req.extract_parts::<CspNonce>().await {
-        Ok(CspNonce(n)) => n,
-        Err(err) => return err.into_response(),
-    };
     let mut resp = next.run(req).await;
     if let Some(failure) = resp.extensions().get::<Arc<Failure>>().cloned() {
         let error = failure.to_string();
-        let body = if json {
+        let status = resp.status();
+        if json {
             resp.headers_mut().insert(CONTENT_TYPE, JSON_CTYPE.clone());
             let error = ErrorSerialization { error };
-            infallible_json_serialize(&error)
+            (status, Json(infallible_json_serialize(&error))).into_response()
         } else {
             resp.headers_mut().insert(CONTENT_TYPE, HTML_CTYPE.clone());
             let error = ErrorTemplate {
@@ -475,16 +477,11 @@ async fn error_middleware(State(state): State<AppState>, mut req: Request, next:
                 root_url: state.root_url,
                 nonce,
             };
-            error
-                .render()
-                .unwrap_or_else(|e| format!("error rendering template: {e}"))
-                .into_bytes()
-        };
-        resp.headers_mut()
-            .insert(CONTENT_LENGTH, HeaderValue::from(body.len()));
-        *resp.body_mut() = Body::from(body);
+            (status, error).into_response()
+        }
+    } else {
+        resp
     }
-    resp
 }
 
 pub struct Png(pub Vec<u8>);
