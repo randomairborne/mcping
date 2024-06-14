@@ -16,7 +16,6 @@ bustdir = { version = "0.1", features = ["askama"] }
 serde = { version = "1", features = ["derive"] }
 pyng = { path = "pyng" }
 askama_escape = "0.10"
-parking_lot = "0.12"
 askama_axum = "0.4"
 valk-utils = "0.1"
 axum-extra = "0.9"

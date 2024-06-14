@@ -6,7 +6,7 @@ mod structures;
 
 use std::{
     net::{Ipv4Addr, SocketAddr},
-    sync::Arc,
+    sync::{Arc, PoisonError, RwLock},
     time::Duration,
 };
 
@@ -27,7 +27,6 @@ use axum::{
 use axum_extra::routing::RouterExt;
 use base64::{prelude::BASE64_STANDARD, Engine};
 use bustdir::BustDir;
-use parking_lot::RwLock;
 use reqwest::{header::HeaderMap, redirect::Policy, Client};
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
@@ -205,13 +204,16 @@ pub struct RootTemplate {
     nonce: String,
 }
 
-async fn root(State(state): State<AppState>, CspNonce(nonce): CspNonce) -> RootTemplate {
-    RootTemplate {
-        svc_status: *state.svc_response.read(),
+async fn root(
+    State(state): State<AppState>,
+    CspNonce(nonce): CspNonce,
+) -> Result<RootTemplate, Failure> {
+    Ok(RootTemplate {
+        svc_status: *state.svc_response.read()?,
         root_url: state.root_url,
         bd: state.bust_dir,
         nonce,
-    }
+    })
 }
 
 #[derive(Template)]
@@ -267,7 +269,7 @@ async fn ping_page(
         _ => return Err(Failure::UnknownEdition),
     }
     Ok(PingPageTemplate {
-        svc_status: *state.svc_response.read(),
+        svc_status: *state.svc_response.read()?,
         root_url: state.root_url,
         bd: state.bust_dir,
         hostname,
@@ -392,10 +394,18 @@ pub enum Failure {
     StatusReqwestFailed(#[from] reqwest::Error),
     #[error("JSON processing error")]
     JsonProcessingFailed(#[from] serde_json::Error),
+    #[error("Status lock poisoned. Please try again in 5 minutes.")]
+    LockPoisoned,
     #[error("No server address specified!")]
     NoHostname,
     #[error("Unknown edition!")]
     UnknownEdition,
+}
+
+impl<T> From<PoisonError<T>> for Failure {
+    fn from(_: PoisonError<T>) -> Self {
+        Self::LockPoisoned
+    }
 }
 
 impl IntoResponse for Failure {
@@ -403,7 +413,9 @@ impl IntoResponse for Failure {
         let status = match self {
             Self::ConnectionFailed(_) | Self::TimedOut => StatusCode::OK,
             Self::StatusReqwestFailed(_) => StatusCode::BAD_GATEWAY,
-            Self::JsonProcessingFailed(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::JsonProcessingFailed(_) | Failure::LockPoisoned => {
+                StatusCode::INTERNAL_SERVER_ERROR
+            }
             Self::NoHostname | Self::UnknownEdition => StatusCode::BAD_REQUEST,
         };
         error!(error = ?self, "Error processing request");

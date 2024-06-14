@@ -1239,7 +1239,6 @@ dependencies = [
  "axum-extra",
  "base64 0.22.1",
  "bustdir",
- "parking_lot",
  "pyng",
  "reqwest",
  "serde",

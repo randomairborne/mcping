@@ -1,7 +1,6 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use axum::extract::State;
-use parking_lot::RwLock;
 use reqwest::Client;
 use tokio::{join, select};
 
@@ -23,7 +22,7 @@ const XBL_STATUS_URL: &str = "https://xnotify.xboxlive.com/servicestatusv6/US/en
 pub async fn handle_mcstatus(
     State(state): State<AppState>,
 ) -> Result<Json<ServicesResponse>, Failure> {
-    Ok(Json(*state.svc_response.read()))
+    Ok(Json(*state.svc_response.read()?))
 }
 
 pub async fn get_mcstatus(http: Client) -> ServicesResponse {
@@ -48,16 +47,21 @@ pub async fn get_mcstatus(http: Client) -> ServicesResponse {
     }
 }
 
-pub async fn refresh_mcstatus(http: Client, resp: Arc<RwLock<ServicesResponse>>) {
+pub async fn refresh_mcstatus(http: Client, status: Arc<RwLock<ServicesResponse>>) {
     loop {
         let sleep = tokio::time::sleep(std::time::Duration::from_secs(240));
         select! {
             () = sleep => {},
             () = vss::shutdown_signal() => break,
         }
-        let status = get_mcstatus(http.clone()).await;
-        let mut response = resp.write();
-        *response = status;
+        let new_status = get_mcstatus(http.clone()).await;
+        match status.write() {
+            Ok(mut v) => *v = new_status,
+            Err(mut e) => {
+                **e.get_mut() = new_status;
+                status.clear_poison();
+            }
+        }
     }
 }
 
