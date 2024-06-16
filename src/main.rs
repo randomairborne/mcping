@@ -413,7 +413,7 @@ impl IntoResponse for Failure {
         let status = match self {
             Self::ConnectionFailed(_) | Self::TimedOut => StatusCode::OK,
             Self::StatusReqwestFailed(_) => StatusCode::BAD_GATEWAY,
-            Self::JsonProcessingFailed(_) | Failure::LockPoisoned => {
+            Self::JsonProcessingFailed(_) | Self::LockPoisoned => {
                 StatusCode::INTERNAL_SERVER_ERROR
             }
             Self::NoHostname | Self::UnknownEdition => StatusCode::BAD_REQUEST,
