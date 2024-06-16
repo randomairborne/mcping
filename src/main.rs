@@ -5,7 +5,8 @@ mod services;
 mod structures;
 
 use std::{
-    net::{Ipv4Addr, SocketAddr},
+    net::{IpAddr, Ipv4Addr, SocketAddr},
+    str::FromStr,
     sync::{Arc, PoisonError, RwLock},
     time::Duration,
 };
@@ -13,10 +14,11 @@ use std::{
 use askama::Template;
 use axum::{
     body::Body,
-    extract::{Path, Query, Request, State},
+    extract::{FromRequestParts, Path, Query, Request, State},
     handler::Handler,
     http::{
         header::{ACCEPT, CACHE_CONTROL, CONTENT_TYPE},
+        request::Parts,
         HeaderName, HeaderValue, StatusCode,
     },
     middleware::Next,
@@ -302,7 +304,9 @@ async fn ping_frame(
     State(state): State<AppState>,
     CspNonce(nonce): CspNonce,
     Path((edition, hostname)): Path<(String, String)>,
+    CfConnectingIp(ip): CfConnectingIp,
 ) -> Result<PingFrameTemplate, Failure> {
+    info!(edition, path = "frame", target = hostname, on_behalf = ?ip, "Pinging server");
     let ping = ping_generic(&edition, hostname.clone()).await?;
     Ok(PingFrameTemplate {
         ping,
@@ -327,7 +331,9 @@ pub struct PingElementTemplate {
 async fn ping_markup(
     State(state): State<AppState>,
     Path((edition, hostname)): Path<(String, String)>,
+    CfConnectingIp(ip): CfConnectingIp,
 ) -> Result<PingElementTemplate, Failure> {
+    info!(edition, path = "markup", target = hostname, on_behalf = ?ip, "Pinging server");
     let ping = ping_generic(&edition, hostname.clone()).await?;
     Ok(PingElementTemplate {
         ping,
@@ -338,9 +344,12 @@ async fn ping_markup(
     })
 }
 
-async fn ping_image(Path((edition, hostname)): Path<(String, String)>) -> Result<Png, StatusCode> {
+async fn ping_image(
+    Path((edition, hostname)): Path<(String, String)>,
+    CfConnectingIp(ip): CfConnectingIp,
+) -> Result<Png, StatusCode> {
     const PREFIX_LEN: usize = "data:image/png;base64,".len();
-    debug!(edition, hostname, "Serving icon");
+    info!(edition, path = "image", target = hostname, on_behalf = ?ip, "Pinging server");
     let ping = match ping_generic(&edition, hostname.clone()).await {
         Ok(v) => v,
         Err(e) => {
@@ -362,11 +371,19 @@ async fn ping_image(Path((edition, hostname)): Path<(String, String)>) -> Result
     Ok(Png(decoded))
 }
 
-async fn handle_java_ping(Path(address): Path<String>) -> Result<Json<MCPingResponse>, Failure> {
+async fn handle_java_ping(
+    Path(address): Path<String>,
+    CfConnectingIp(ip): CfConnectingIp,
+) -> Result<Json<MCPingResponse>, Failure> {
+    info!(edition = "java", path = "api", target = address, on_behalf = ?ip, "Pinging server");
     Ok(Json(ping_java(address).await?))
 }
 
-async fn handle_bedrock_ping(Path(address): Path<String>) -> Result<Json<MCPingResponse>, Failure> {
+async fn handle_bedrock_ping(
+    Path(address): Path<String>,
+    CfConnectingIp(ip): CfConnectingIp,
+) -> Result<Json<MCPingResponse>, Failure> {
+    info!(edition = "bedrock", path = "api", target = address, on_behalf = ?ip, "Pinging server");
     Ok(Json(ping_bedrock(address).await?))
 }
 
@@ -394,6 +411,10 @@ pub enum Failure {
     StatusReqwestFailed(#[from] reqwest::Error),
     #[error("JSON processing error")]
     JsonProcessingFailed(#[from] serde_json::Error),
+    #[error("Could not convert header to string")]
+    HeaderToStr(#[from] axum::http::header::ToStrError),
+    #[error("Could not convert string to IP address")]
+    AddressParse(#[from] std::net::AddrParseError),
     #[error("Status lock poisoned. Please try again in 5 minutes.")]
     LockPoisoned,
     #[error("No server address specified!")]
@@ -414,7 +435,10 @@ impl IntoResponse for Failure {
             Self::ConnectionFailed(_) | Self::TimedOut => StatusCode::OK,
             Self::StatusReqwestFailed(_) => StatusCode::BAD_GATEWAY,
             Self::JsonProcessingFailed(_) | Self::LockPoisoned => StatusCode::INTERNAL_SERVER_ERROR,
-            Self::NoHostname | Self::UnknownEdition => StatusCode::BAD_REQUEST,
+            Self::NoHostname
+            | Self::UnknownEdition
+            | Self::AddressParse(_)
+            | Self::HeaderToStr(_) => StatusCode::BAD_REQUEST,
         };
         error!(error = ?self, "Error processing request");
         (status, Extension(Arc::new(self)), Body::empty()).into_response()
@@ -501,5 +525,25 @@ impl IntoResponse for Png {
         static PNG_CTYPE: HeaderValue = HeaderValue::from_static("image/png");
         let headers = [(CONTENT_TYPE, PNG_CTYPE.clone())];
         (headers, self.0).into_response()
+    }
+}
+
+pub struct CfConnectingIp(pub IpAddr);
+
+#[axum::async_trait]
+impl<S> FromRequestParts<S> for CfConnectingIp {
+    type Rejection = Failure;
+
+    async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
+        static NAME: HeaderName = HeaderName::from_static("cf-connecting-ip");
+
+        let Some(ip_hdr) = parts.headers.get(&NAME) else {
+            warn!("Cloudflare did not send cf-connecting-ip");
+            return Ok(Self(IpAddr::V4(Ipv4Addr::UNSPECIFIED)));
+        };
+
+        let ip_str = ip_hdr.to_str()?;
+        let ip = IpAddr::from_str(ip_str)?;
+        Ok(Self(ip))
     }
 }
