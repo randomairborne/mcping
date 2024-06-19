@@ -459,11 +459,11 @@ pub struct ErrorTemplate {
     nonce: String,
 }
 
-static HTML_CTYPE: HeaderValue = HeaderValue::from_static("text/html;charset=utf-8");
+static HTML_CONTENT_TYPE: HeaderValue = HeaderValue::from_static("text/html;charset=utf-8");
 
 pub struct Json<T: Serialize>(pub T);
 
-static JSON_CTYPE: HeaderValue = HeaderValue::from_static("application/json;charset=utf-8");
+static JSON_CONTENT_TYPE: HeaderValue = HeaderValue::from_static("application/json;charset=utf-8");
 
 fn infallible_json_serialize<T: Serialize>(data: &T) -> Vec<u8> {
     serde_json::to_vec_pretty(data).unwrap_or_else(|_| {
@@ -478,7 +478,7 @@ impl<T: Serialize> IntoResponse for Json<T> {
         let body = infallible_json_serialize(&self.0);
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            [(CONTENT_TYPE, JSON_CTYPE.clone())],
+            [(CONTENT_TYPE, JSON_CONTENT_TYPE.clone())],
             body,
         )
             .into_response()
@@ -500,11 +500,13 @@ async fn error_middleware(
         let error = failure.to_string();
         let status = resp.status();
         if json {
-            resp.headers_mut().insert(CONTENT_TYPE, JSON_CTYPE.clone());
+            resp.headers_mut()
+                .insert(CONTENT_TYPE, JSON_CONTENT_TYPE.clone());
             let error = ErrorSerialization { error };
             (status, Json(infallible_json_serialize(&error))).into_response()
         } else {
-            resp.headers_mut().insert(CONTENT_TYPE, HTML_CTYPE.clone());
+            resp.headers_mut()
+                .insert(CONTENT_TYPE, HTML_CONTENT_TYPE.clone());
             let error = ErrorTemplate {
                 error,
                 bd: state.bust_dir,
@@ -522,8 +524,8 @@ pub struct Png(pub Vec<u8>);
 
 impl IntoResponse for Png {
     fn into_response(self) -> Response {
-        static PNG_CTYPE: HeaderValue = HeaderValue::from_static("image/png");
-        let headers = [(CONTENT_TYPE, PNG_CTYPE.clone())];
+        static PNG_CONTENT_TYPE: HeaderValue = HeaderValue::from_static("image/png");
+        let headers = [(CONTENT_TYPE, PNG_CONTENT_TYPE.clone())];
         (headers, self.0).into_response()
     }
 }
