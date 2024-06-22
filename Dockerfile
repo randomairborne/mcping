@@ -1,32 +1,28 @@
+ARG LLVMTARGETARCH
+FROM --platform=${BUILDPLATFORM} ghcr.io/randomairborne/cross-cargo-${LLVMTARGETARCH}:latest AS server-builder
+
+ARG LLVMTARGETARCH
+
+WORKDIR /build
+
+COPY . .
+
+RUN cargo build --release --target ${LLVMTARGETARCH}-unknown-linux-musl
+
 FROM ghcr.io/randomairborne/asset-squisher:latest AS client-builder
 
 COPY /assets/ /uncompressed-assets/
 
 RUN asset-squisher /uncompressed-assets/ /assets/
 
-FROM rust:alpine AS server-builder
-
-WORKDIR /build
-COPY . .
-
-RUN apk add musl-dev
-
-RUN cargo version
-
-RUN \
-    --mount=type=cache,target=/build/target/ \
-    --mount=type=cache,target=/usr/local/cargo/registry/ \
-    cargo build --release && cp /build/target/release/mcping /build/mcping
-
-FROM alpine:latest
+FROM scratch
+ARG LLVMTARGETARCH
 
 WORKDIR /
 
-COPY --from=server-builder /build/mcping /usr/bin/mcping
+COPY --from=server-builder /build/target/${LLVMTARGETARCH}-unknown-linux-musl/release/mcping /usr/bin/mcping
 COPY --from=client-builder /assets/ /var/www/mcping/
 
-EXPOSE 8080
-ENV ASSET_DIR="/var/www/mcping/"
+COPY --from=builder /build/target/${LLVMTARGETARCH}-unknown-linux-musl/release/mcping /usr/bin/mcping
 
-CMD ["/usr/bin/mcping"]
-
+ENTRYPOINT ["/usr/bin/mcping"]
