@@ -1,6 +1,11 @@
 <form class="execute-ping-stack" action="{{ root_url }}/ping/redirect">
   <label for="address-entry" hidden>Server address</label>
-  <input id="address-entry" placeholder="Server address" name="address" />
+  <input
+    id="address-entry"
+    placeholder="Server address"
+    name="address"
+    required
+  />
   <div class="select-ping">
     <button type="submit" name="edition" class="java" value="java">
       Ping Java
