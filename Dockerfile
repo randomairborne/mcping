@@ -23,6 +23,4 @@ WORKDIR /
 COPY --from=server-builder /build/target/${LLVMTARGETARCH}-unknown-linux-musl/release/mcping /usr/bin/mcping
 COPY --from=client-builder /assets/ /var/www/mcping/
 
-COPY --from=builder /build/target/${LLVMTARGETARCH}-unknown-linux-musl/release/mcping /usr/bin/mcping
-
 ENTRYPOINT ["/usr/bin/mcping"]
