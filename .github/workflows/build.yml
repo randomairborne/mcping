@@ -16,7 +16,7 @@ jobs:
     uses: ./.github/workflows/check.yml
 
   build:
-    needs: [check]
+    needs: [ check ]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -66,7 +66,7 @@ jobs:
 
   merge:
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [ build ]
     steps:
       - name: Download digests
         uses: actions/download-artifact@v4
@@ -91,15 +91,13 @@ jobs:
           docker buildx imagetools create --tag ${{ env.REGISTRY_IMAGE }}:latest --tag ${{ env.REGISTRY_IMAGE }}:git-${{ github.sha }} $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
 
   deploy:
-    needs: [merge]
+    needs: [ merge ]
     runs-on: ubuntu-latest
     steps:
-      - name: Correct env
-        run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
       - uses: actions-hub/kubectl@master
         env:
           KUBE_HOST: ${{ secrets.KUBE_HOST }}
           KUBE_CERTIFICATE: ${{ secrets.KUBE_CERTIFICATE }}
           KUBE_TOKEN: ${{ secrets.KUBE_TOKEN }}
         with:
-          args: -n mcping set image deployment/mcping mcping=ghcr.io/${{ env.REPO }}:git-${{ github.sha }}
+          args: -n mcping set image deployment/mcping mcping=${{ env.REGISTRY_IMAGE }}:git-${{ github.sha }}
