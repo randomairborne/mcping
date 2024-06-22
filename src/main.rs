@@ -332,7 +332,7 @@ async fn ping_markup(
     State(state): State<AppState>,
     Path((edition, hostname)): Path<(String, String)>,
     CfConnectingIp(ip): CfConnectingIp,
-) -> Result<PingElementTemplate, Failure> {
+) -> Result<PingElementTemplate, MarkupOnlyFailure> {
     info!(edition, path = "markup", target = hostname, on_behalf = ?ip, "Pinging server");
     let ping = ping_generic(&edition, hostname.clone()).await?;
     Ok(PingElementTemplate {
@@ -445,6 +445,25 @@ impl IntoResponse for Failure {
     }
 }
 
+pub struct MarkupOnlyFailure(pub Failure);
+
+#[derive(Copy, Clone, Debug)]
+pub struct SendErrorElement;
+
+impl IntoResponse for MarkupOnlyFailure {
+    fn into_response(self) -> Response {
+        let mut resp = self.0.into_response();
+        resp.extensions_mut().insert(SendErrorElement);
+        resp
+    }
+}
+
+impl From<Failure> for MarkupOnlyFailure {
+    fn from(value: Failure) -> Self {
+        Self(value)
+    }
+}
+
 #[derive(Serialize)]
 pub struct ErrorSerialization {
     error: String,
@@ -459,7 +478,11 @@ pub struct ErrorTemplate {
     nonce: String,
 }
 
-static HTML_CONTENT_TYPE: HeaderValue = HeaderValue::from_static("text/html;charset=utf-8");
+#[derive(Template)]
+#[template(path = "error-element.html")]
+pub struct ErrorElement {
+    error: String,
+}
 
 pub struct Json<T: Serialize>(pub T);
 
@@ -499,14 +522,17 @@ async fn error_middleware(
     if let Some(failure) = resp.extensions().get::<Arc<Failure>>().cloned() {
         let error = failure.to_string();
         let status = resp.status();
+        let markup_only = resp.extensions().get::<SendErrorElement>().is_some();
+
         if json {
             resp.headers_mut()
                 .insert(CONTENT_TYPE, JSON_CONTENT_TYPE.clone());
             let error = ErrorSerialization { error };
             (status, Json(infallible_json_serialize(&error))).into_response()
+        } else if markup_only {
+            let error = ErrorElement { error };
+            (status, error).into_response()
         } else {
-            resp.headers_mut()
-                .insert(CONTENT_TYPE, HTML_CONTENT_TYPE.clone());
             let error = ErrorTemplate {
                 error,
                 bd: state.bust_dir,
