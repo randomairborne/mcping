@@ -1,5 +1,5 @@
 ARG LLVMTARGETARCH
-FROM --platform=${BUILDPLATFORM} ghcr.io/randomairborne/cross-cargo-${LLVMTARGETARCH}:latest AS server-builder
+FROM --platform=${BUILDPLATFORM} ghcr.io/randomairborne/cross-cargo:${LLVMTARGETARCH} AS server-builder
 
 ARG LLVMTARGETARCH
 
