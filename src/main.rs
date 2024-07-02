@@ -102,6 +102,8 @@ async fn main() {
     let cache_max =
         SetResponseHeaderLayer::overriding(CACHE_CONTROL.clone(), CACHE_CONTROL_IMMUTABLE.clone());
     let noindex = SetResponseHeaderLayer::overriding(ROBOTS_NAME.clone(), ROBOTS_VALUE.clone());
+    let shared_cors =
+        SetResponseHeaderLayer::overriding(ALLOW_CORS_NAME.clone(), ALLOW_CORS_VALUE.clone());
     let clacks = SetResponseHeaderLayer::overriding(CLACKS_NAME.clone(), CLACKS_VALUE.clone());
 
     let csp = get_csp();
@@ -127,7 +129,12 @@ async fn main() {
         .route("/api/java/", get(no_address))
         .route("/api/bedrock/", get(no_address))
         .route("/api/services", get(services::handle_mcstatus))
-        .layer(ServiceBuilder::new().layer(noindex).layer(cache_none));
+        .layer(
+            ServiceBuilder::new()
+                .layer(noindex)
+                .layer(cache_none)
+                .layer(shared_cors),
+        );
     let router = Router::new()
         .route("/", get(root))
         .route_with_tsr("/api/", get(api_info))
@@ -198,6 +205,9 @@ static CACHE_CONTROL_NONE: HeaderValue = HeaderValue::from_static("max-age=0, no
 
 static CLACKS_NAME: HeaderName = HeaderName::from_static("x-clacks-overhead");
 static CLACKS_VALUE: HeaderValue = HeaderValue::from_static("GNU Alexander \"Technoblade\"");
+
+static ALLOW_CORS_NAME: HeaderName = HeaderName::from_static("access-control-allow-origin");
+static ALLOW_CORS_VALUE: HeaderValue = HeaderValue::from_static("*");
 
 #[derive(Template)]
 #[template(path = "index.html")]
