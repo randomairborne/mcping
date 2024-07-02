@@ -25,6 +25,7 @@ tracing = "0.1"
 base64 = "0.22"
 tower = "0.4"
 vss = "0.1"
+arc-swap = "1.7.1"
 
 [workspace]
 members = [

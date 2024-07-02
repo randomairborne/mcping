@@ -31,7 +31,7 @@ pub struct XblStatusStatus {
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct XblStatusStatusItem {
-    pub state: String,
+    pub state: XblStatusName,
 }
 
 #[allow(clippy::module_name_repetitions)]
@@ -51,10 +51,39 @@ pub struct XblStatusCoreServiceScenario {
     pub id: i64,
 }
 
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+#[serde(from = "String", into = "String")]
+pub enum XblStatusName {
+    Impacted,
+    None,
+    Unknown(String),
+}
+
+impl From<String> for XblStatusName {
+    fn from(value: String) -> Self {
+        match value.as_str() {
+            "Impacted" => Self::Impacted,
+            "None" => Self::None,
+            _ => Self::Unknown(value),
+        }
+    }
+}
+
+impl From<XblStatusName> for String {
+    fn from(value: XblStatusName) -> Self {
+        match value {
+            XblStatusName::Impacted => "Impacted".to_owned(),
+            XblStatusName::None => "None".to_owned(),
+            XblStatusName::Unknown(unknown) => unknown,
+        }
+    }
+}
+
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct XblStatusCoreServiceStatus {
     pub id: i64,
+    pub name: XblStatusName,
 }
 
 #[derive(Deserialize, Clone, Debug)]

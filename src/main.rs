@@ -7,10 +7,11 @@ mod structures;
 use std::{
     net::{IpAddr, Ipv4Addr, SocketAddr},
     str::FromStr,
-    sync::{Arc, PoisonError, RwLock},
+    sync::Arc,
     time::Duration,
 };
 
+use arc_swap::ArcSwap;
 use askama::Template;
 use axum::{
     body::Body,
@@ -79,10 +80,11 @@ async fn main() {
         .build()
         .unwrap();
     info!("Fetching minecraft server status");
-    let current_mcstatus: Arc<RwLock<ServicesResponse>> =
-        Arc::new(RwLock::new(get_mcstatus(http_client.clone()).await));
+    let current_mcstatus: Arc<ArcSwap<ServicesResponse>> = Arc::new(ArcSwap::new(Arc::new(
+        get_mcstatus(http_client.clone()).await,
+    )));
     info!(
-        status = ?current_mcstatus.read(),
+        status = ?**current_mcstatus.load(),
         "Got mojang service status"
     );
     tokio::spawn(refresh_mcstatus(http_client, Arc::clone(&current_mcstatus)));
@@ -181,7 +183,7 @@ fn get_csp() -> ContentSecurityPolicy {
 
 #[derive(Clone)]
 pub struct AppState {
-    svc_response: Arc<RwLock<ServicesResponse>>,
+    svc_response: Arc<ArcSwap<ServicesResponse>>,
     root_url: Arc<str>,
     bust_dir: Arc<BustDir>,
 }
@@ -206,16 +208,15 @@ pub struct RootTemplate {
     nonce: String,
 }
 
-async fn root(
-    State(state): State<AppState>,
-    CspNonce(nonce): CspNonce,
-) -> Result<RootTemplate, Failure> {
-    Ok(RootTemplate {
-        svc_status: *state.svc_response.read()?,
+async fn root(State(state): State<AppState>, CspNonce(nonce): CspNonce) -> RootTemplate {
+    // create a copy of the services response
+    let svc_status = **state.svc_response.load();
+    RootTemplate {
+        svc_status,
         root_url: state.root_url,
         bd: state.bust_dir,
         nonce,
-    })
+    }
 }
 
 #[derive(Template)]
@@ -271,7 +272,7 @@ async fn ping_page(
         _ => return Err(Failure::UnknownEdition),
     }
     Ok(PingPageTemplate {
-        svc_status: *state.svc_response.read()?,
+        svc_status: **state.svc_response.load(),
         root_url: state.root_url,
         bd: state.bust_dir,
         hostname,
@@ -415,18 +416,10 @@ pub enum Failure {
     HeaderToStr(#[from] axum::http::header::ToStrError),
     #[error("Could not convert string to IP address")]
     AddressParse(#[from] std::net::AddrParseError),
-    #[error("Status lock poisoned. Please try again in 5 minutes.")]
-    LockPoisoned,
     #[error("No server address specified!")]
     NoHostname,
     #[error("Unknown edition!")]
     UnknownEdition,
-}
-
-impl<T> From<PoisonError<T>> for Failure {
-    fn from(_: PoisonError<T>) -> Self {
-        Self::LockPoisoned
-    }
 }
 
 impl IntoResponse for Failure {
@@ -434,7 +427,7 @@ impl IntoResponse for Failure {
         let status = match self {
             Self::ConnectionFailed(_) | Self::TimedOut => StatusCode::OK,
             Self::StatusReqwestFailed(_) => StatusCode::BAD_GATEWAY,
-            Self::JsonProcessingFailed(_) | Self::LockPoisoned => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::JsonProcessingFailed(_) => StatusCode::INTERNAL_SERVER_ERROR,
             Self::NoHostname
             | Self::UnknownEdition
             | Self::AddressParse(_)

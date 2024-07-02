@@ -1,5 +1,6 @@
-use std::sync::{Arc, RwLock};
+use std::{sync::Arc, time::Duration};
 
+use arc_swap::ArcSwap;
 use axum::extract::State;
 use reqwest::Client;
 use tokio::{join, select};
@@ -7,9 +8,9 @@ use tokio::{join, select};
 use crate::{
     structures::{
         MinecraftApiStatusEntry, MojangApiStatus, MojangSessionServerStatus, ServicesResponse,
-        Status, XblStatusResponse,
+        Status, XblStatusName, XblStatusResponse,
     },
-    AppState, Failure, Json,
+    AppState, Json,
 };
 
 const MOJANG_SESSIONSERVER_URL: &str =
@@ -19,10 +20,8 @@ const MINECRAFT_SERVICES_API_URL: &str =
     "https://api.minecraftservices.com/minecraft/profile/lookup/bulk/byname";
 const XBL_STATUS_URL: &str = "https://xnotify.xboxlive.com/servicestatusv6/US/en-US";
 
-pub async fn handle_mcstatus(
-    State(state): State<AppState>,
-) -> Result<Json<ServicesResponse>, Failure> {
-    Ok(Json(*state.svc_response.read()?))
+pub async fn handle_mcstatus(State(state): State<AppState>) -> Json<ServicesResponse> {
+    Json(**state.svc_response.load())
 }
 
 pub async fn get_mcstatus(http: Client) -> ServicesResponse {
@@ -47,21 +46,17 @@ pub async fn get_mcstatus(http: Client) -> ServicesResponse {
     }
 }
 
-pub async fn refresh_mcstatus(http: Client, status: Arc<RwLock<ServicesResponse>>) {
+const MOJANG_API_REFRESH: Duration = Duration::from_secs(240);
+
+pub async fn refresh_mcstatus(http: Client, status: Arc<ArcSwap<ServicesResponse>>) {
     loop {
-        let sleep = tokio::time::sleep(std::time::Duration::from_secs(240));
+        let sleep = tokio::time::sleep(MOJANG_API_REFRESH);
         select! {
             () = sleep => {},
             () = vss::shutdown_signal() => break,
         }
-        let new_status = get_mcstatus(http.clone()).await;
-        match status.write() {
-            Ok(mut v) => *v = new_status,
-            Err(mut e) => {
-                **e.get_mut() = new_status;
-                status.clear_poison();
-            }
-        }
+        let new_status = Arc::new(get_mcstatus(http.clone()).await);
+        status.store(new_status);
     }
 }
 
@@ -80,7 +75,7 @@ async fn get_xbox(client: Client) -> Status {
             return Status::PossibleProblems;
         }
     };
-    if result.status.overall.state != "None" {
+    if result.status.overall.state != XblStatusName::None {
         warn!("overall status was not None");
         return Status::PossibleProblems;
     }
@@ -88,6 +83,14 @@ async fn get_xbox(client: Client) -> Status {
     for service in result.core_services.iter().chain(result.titles.iter()) {
         if !minecraft_adjacent_services.contains(&service.id) {
             continue;
+        }
+        match &service.status.name {
+            XblStatusName::Impacted => return Status::DefiniteProblems,
+            XblStatusName::None => {}
+            XblStatusName::Unknown(status) => {
+                warn!(status, "Unknown XBL status returned");
+                return Status::PossibleProblems;
+            }
         }
         for scenario in &service.possible_scenarios {
             if scenario.id == service.status.id {
