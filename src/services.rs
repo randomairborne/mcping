@@ -75,9 +75,10 @@ async fn get_xbox(client: Client) -> Status {
             return Status::PossibleProblems;
         }
     };
+    let mut status = Status::Operational;
     if result.status.overall.state != XblStatusName::None {
         warn!("overall status was not None");
-        return Status::PossibleProblems;
+        status.make_at_least(Status::PossibleProblems);
     }
     let minecraft_adjacent_services = [13, 16, 20, 22, 23, 24, 25];
     for service in result.core_services.iter().chain(result.titles.iter()) {
@@ -85,21 +86,21 @@ async fn get_xbox(client: Client) -> Status {
             continue;
         }
         match &service.status.name {
-            XblStatusName::Impacted => return Status::DefiniteProblems,
+            XblStatusName::Impacted => status.make_at_least(Status::DefiniteProblems),
             XblStatusName::None => {}
-            XblStatusName::Unknown(status) => {
-                warn!(status, "Unknown XBL status returned");
-                return Status::PossibleProblems;
+            XblStatusName::Unknown(q_status) => {
+                warn!(status = q_status, "Unknown XBL status returned");
+                status.make_at_least(Status::PossibleProblems);
             }
         }
         for scenario in &service.possible_scenarios {
             if scenario.id == service.status.id {
                 warn!(id = scenario.id, "Got report of XBL problem from XBL api");
-                return Status::DefiniteProblems;
+                status.make_at_least(Status::DefiniteProblems);
             }
         }
     }
-    Status::Operational
+    status
 }
 
 async fn get_session(client: Client) -> Status {
@@ -118,9 +119,10 @@ async fn get_session(client: Client) -> Status {
         }
     };
     if result.name != "mcping_me" || result.id != "bbb47773bb48438e806b7731b2724e84" {
-        return Status::DefiniteProblems;
+        Status::DefiniteProblems
+    } else {
+        Status::Operational
     }
-    Status::Operational
 }
 
 async fn get_mojang(client: Client) -> Status {
@@ -139,9 +141,10 @@ async fn get_mojang(client: Client) -> Status {
         }
     };
     if result.name != "mcping_me" || result.id != "bbb47773bb48438e806b7731b2724e84" {
-        return Status::DefiniteProblems;
+        Status::DefiniteProblems
+    } else {
+        Status::Operational
     }
-    Status::Operational
 }
 
 async fn get_minecraft(client: Client) -> Status {

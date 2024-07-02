@@ -140,11 +140,17 @@ pub struct PlayerSample {
     pub name: String,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialOrd, Ord, PartialEq, Eq)]
 pub enum Status {
-    Operational,
-    PossibleProblems,
-    DefiniteProblems,
+    Operational = 0,
+    PossibleProblems = 1,
+    DefiniteProblems = 2,
+}
+
+impl Status {
+    pub fn make_at_least(&mut self, other: Self) {
+        *self = std::cmp::max(*self, other);
+    }
 }
 
 impl Serialize for Status {
