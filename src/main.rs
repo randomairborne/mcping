@@ -521,6 +521,7 @@ async fn error_middleware(
         .headers()
         .get(ACCEPT)
         .is_some_and(|v| v.to_str().is_ok_and(|v| v.contains("application/json")));
+
     let mut resp = next.run(req).await;
     if let Some(failure) = resp.extensions().get::<Arc<Failure>>().cloned() {
         let error = failure.to_string();
