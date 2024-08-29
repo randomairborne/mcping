@@ -62,7 +62,7 @@ async fn main() {
     let asset_dir = std::env::var("ASSET_DIR").unwrap_or_else(|_| "./assets/".to_owned());
     let root_url = valk_utils::get_var("ROOT_URL");
     let root_url = root_url.trim_end_matches('/').to_owned();
-    let port: u16 = std::env::var("PORT").map_or(DEFAULT_PORT, |v| v.parse().unwrap());
+    let port: u16 = valk_utils::parse_var_or("PORT", DEFAULT_PORT);
     let bust_dir = BustDir::new(&asset_dir).expect("Failed to build cache busting directory");
 
     let mut default_headers = HeaderMap::new();
