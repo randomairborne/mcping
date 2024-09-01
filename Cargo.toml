@@ -23,7 +23,7 @@ serde_json = "1"
 thiserror = "1"
 tracing = "0.1"
 base64 = "0.22"
-tower = "0.4"
+tower = "0.5"
 vss = "0.1"
 arc-swap = "1.7.1"
 
