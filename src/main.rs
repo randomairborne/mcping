@@ -53,6 +53,7 @@ extern crate tracing;
 
 const DEFAULT_PORT: u16 = 8080;
 
+#[allow(clippy::too_many_lines)]
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt()
@@ -63,22 +64,24 @@ async fn main() {
     let root_url = valk_utils::get_var("ROOT_URL");
     let root_url = root_url.trim_end_matches('/').to_owned();
     let port: u16 = valk_utils::parse_var_or("PORT", DEFAULT_PORT);
+    let contact_email = valk_utils::get_var("CONTACT_EMAIL");
     let bust_dir = BustDir::new(&asset_dir).expect("Failed to build cache busting directory");
 
     let mut default_headers = HeaderMap::new();
     default_headers.insert("Accept", "application/json".parse().unwrap());
 
+    let user_agent = format!(
+        "mcping.me/{} (https://github.com/randomairborne/mcping; {contact_email})",
+        env!("CARGO_PKG_VERSION")
+    );
     let http_client = Client::builder()
         .connect_timeout(Duration::from_secs(10))
         .default_headers(default_headers)
-        .user_agent(concat!(
-            "mcping.me/",
-            env!("CARGO_PKG_VERSION"),
-            " (https://github.com/randomairborne/mcping)"
-        ))
+        .user_agent(user_agent)
         .redirect(Policy::limited(100))
         .build()
         .unwrap();
+
     info!("Fetching minecraft server status");
     let current_mcstatus: Arc<ArcSwap<ServicesResponse>> = Arc::new(ArcSwap::new(Arc::new(
         get_mcstatus(http_client.clone()).await,
@@ -87,7 +90,7 @@ async fn main() {
         status = ?**current_mcstatus.load(),
         "Got mojang service status"
     );
-    tokio::spawn(refresh_mcstatus(http_client, Arc::clone(&current_mcstatus)));
+    let status_refresh = tokio::spawn(refresh_mcstatus(http_client, Arc::clone(&current_mcstatus)));
 
     let state = AppState {
         svc_response: current_mcstatus,
@@ -163,6 +166,7 @@ async fn main() {
         .with_graceful_shutdown(vss::shutdown_signal())
         .await
         .unwrap();
+    status_refresh.await.expect("Updater tasked panicked");
 }
 
 fn get_csp() -> ContentSecurityPolicy {
