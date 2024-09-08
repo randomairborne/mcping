@@ -214,7 +214,7 @@ static ALLOW_CORS_NAME: HeaderName = HeaderName::from_static("access-control-all
 static ALLOW_CORS_VALUE: HeaderValue = HeaderValue::from_static("*");
 
 #[derive(Template)]
-#[template(path = "index.html")]
+#[template(path = "index.hbs", escape = "html")]
 pub struct RootTemplate {
     svc_status: ServicesResponse,
     root_url: Arc<str>,
@@ -234,7 +234,7 @@ async fn root(State(state): State<AppState>, CspNonce(nonce): CspNonce) -> RootT
 }
 
 #[derive(Template)]
-#[template(path = "api.html")]
+#[template(path = "api.hbs", escape = "html")]
 pub struct ApiTemplate {
     bd: Arc<BustDir>,
     root_url: Arc<str>,
@@ -266,7 +266,7 @@ async fn ping_redirect(
 }
 
 #[derive(Template)]
-#[template(path = "ping-page.html")]
+#[template(path = "ping-page.hbs", escape = "html")]
 pub struct PingPageTemplate {
     svc_status: ServicesResponse,
     root_url: Arc<str>,
@@ -305,7 +305,7 @@ async fn ping_generic(edition: &str, hostname: String) -> Result<MCPingResponse,
 }
 
 #[derive(Template)]
-#[template(path = "ping-frame.html")]
+#[template(path = "ping-frame.hbs", escape = "html")]
 pub struct PingFrameTemplate {
     ping: MCPingResponse,
     bd: Arc<BustDir>,
@@ -334,7 +334,7 @@ async fn ping_frame(
 }
 
 #[derive(Template)]
-#[template(path = "ping-element.html")]
+#[template(path = "ping-element.hbs", escape = "html")]
 pub struct PingElementTemplate {
     ping: MCPingResponse,
     bd: Arc<BustDir>,
@@ -477,7 +477,7 @@ pub struct ErrorSerialization {
 }
 
 #[derive(Template)]
-#[template(path = "error.html")]
+#[template(path = "error.hbs", escape = "html")]
 pub struct ErrorTemplate {
     error: String,
     bd: Arc<BustDir>,
@@ -486,7 +486,7 @@ pub struct ErrorTemplate {
 }
 
 #[derive(Template)]
-#[template(path = "error-element.html")]
+#[template(path = "error-element.hbs", escape = "html")]
 pub struct ErrorElement {
     error: String,
 }

@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base.hbs" %}
 {% block description %}
   mcping - ping {{ hostname }}
 {% endblock description %}
@@ -18,7 +18,7 @@
         data-src="{{ root_url }}/internal/ping-markup/{{ edition }}/{{ hostname }}"
       ></div>
       <h2>Ping another?</h2>
-      {% include "ping-form.html" %}
+      {% include "ping-form.hbs" %}
     </div>
   </div>
   <script nonce="{{ nonce }}">
@@ -32,5 +32,5 @@
     load().then(() => {});
   </script>
   <div class="vspacer"></div>
-  {% include "api-status.html" %}
+  {% include "api-status.hbs" %}
 {% endblock %}
