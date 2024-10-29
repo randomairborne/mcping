@@ -1,5 +1,5 @@
 //! Implementation of the Java Minecraft ping protocol.
-//! https://wiki.vg/Server_List_Ping
+//! [Server List Ping](https://wiki.vg/Server_List_Ping)
 
 use std::time::Duration;
 
@@ -90,7 +90,7 @@ pub struct Version {
     ///
     /// In practice this comes in a large variety of different formats.
     pub name: String,
-    /// See https://wiki.vg/Protocol_version_numbers
+    /// See [Protocol Version Numbers](https://wiki.vg/Protocol_version_numbers)
     pub protocol: i64,
 }
 
@@ -126,10 +126,11 @@ pub enum Chat {
 }
 
 impl Chat {
+    #[must_use]
     pub fn text(&self) -> &str {
         match self {
-            Chat::Text { text } => text.as_str(),
-            Chat::String(s) => s.as_str(),
+            Self::Text { text } => text.as_str(),
+            Self::String(s) => s.as_str(),
         }
     }
 }
@@ -141,7 +142,7 @@ pub struct InvalidPacket {
 }
 
 #[derive(Debug)]
-pub(crate) enum Packet {
+pub enum Packet {
     Handshake {
         version: i32,
         host: String,

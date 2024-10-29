@@ -56,7 +56,7 @@ pub trait AsyncPingable {
 /// # Ok::<(), pyng::Error>(())
 /// # };
 /// ```
-pub async fn get_status<P: AsyncPingable>(pingable: P) -> Result<(u64, P::Response), Error> {
+pub async fn get_status<P: AsyncPingable + Send>(pingable: P) -> Result<(u64, P::Response), Error> {
     pingable.ping().await
 }
 

@@ -1,5 +1,5 @@
 //! Implementation of the Java Minecraft ping protocol.
-//! https://wiki.vg/Server_List_Ping
+//! [Server List Ping](https://wiki.vg/Server_List_Ping)
 
 use std::{
     io::{self, Cursor},
@@ -17,7 +17,7 @@ use crate::{java::Packet, tokio::AsyncPingable, Error, Java, JavaResponse};
 impl AsyncPingable for Java {
     type Response = JavaResponse;
 
-    async fn ping(self) -> Result<(u64, Self::Response), crate::Error> {
+    async fn ping(self) -> Result<(u64, Self::Response), Error> {
         let mut conn = Connection::new(&self.server_address, self.timeout).await?;
 
         // Handshake
@@ -48,10 +48,9 @@ impl AsyncPingable for Java {
         let r = rand::random();
         conn.send_packet(Packet::Ping { payload: r }).await?;
 
-        let before = Instant::now();
         let ping = match conn.read_packet().await? {
             Packet::Pong { payload } if payload == r => {
-                (Instant::now() - before).as_millis() as u64
+                Instant::now().elapsed().as_millis().try_into()?
             }
             _ => return Err(Error::InvalidPacket),
         };
@@ -65,7 +64,7 @@ trait AsyncReadJavaExt: AsyncRead + AsyncReadExt + Unpin {
         let mut res = 0i32;
         for i in 0..5u8 {
             let part = self.read_u8().await?;
-            res |= (part as i32 & 0x7F) << (7 * i);
+            res |= (i32::from(part) & 0x7F) << (7 * i);
             if part & 0x80 == 0 {
                 return Ok(res);
             }
@@ -74,7 +73,7 @@ trait AsyncReadJavaExt: AsyncRead + AsyncReadExt + Unpin {
     }
 
     async fn read_string(&mut self) -> io::Result<String> {
-        let len: usize = self.read_varint().await?.try_into().map_err(|v| {
+        let len: usize = self.read_varint().await?.try_into().map_err(|_v| {
             io::Error::new(
                 io::ErrorKind::InvalidData,
                 "Netty string length varint cannot be negative",
@@ -89,13 +88,14 @@ trait AsyncReadJavaExt: AsyncRead + AsyncReadExt + Unpin {
         let mut buf = vec![0; len];
         self.read_exact(&mut buf).await?;
         String::from_utf8(buf)
-            .map_err(|v| io::Error::new(io::ErrorKind::InvalidData, "Bad UTF-8 in Netty string"))
+            .map_err(|_v| io::Error::new(io::ErrorKind::InvalidData, "Bad UTF-8 in Netty string"))
     }
 }
 
 impl<T> AsyncReadJavaExt for T where T: AsyncRead + AsyncReadExt + Unpin {}
 
 trait AsyncWriteJavaExt: AsyncWrite + AsyncWriteExt + Unpin {
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     async fn write_varint(&mut self, mut val: i32) -> io::Result<()> {
         for _ in 0..5 {
             if val & !0x7F == 0 {
@@ -109,7 +109,13 @@ trait AsyncWriteJavaExt: AsyncWrite + AsyncWriteExt + Unpin {
     }
 
     async fn write_string(&mut self, s: &str) -> io::Result<()> {
-        self.write_varint(s.len() as i32).await?;
+        let len_i32 = s.len().try_into().map_err(|_| {
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Tried to write out of bounds usize as i32 varint",
+            )
+        })?;
+        self.write_varint(len_i32).await?;
         self.write_all(s.as_bytes()).await?;
         Ok(())
     }
@@ -213,14 +219,14 @@ impl Connection {
             }
             _ => return Err(Error::InvalidPacket),
         }
-        self.stream.write_varint(buf.len() as i32).await?;
+        self.stream.write_varint(buf.len().try_into()?).await?;
         self.stream.write_all(&buf).await?;
         Ok(())
     }
 
     async fn read_packet(&mut self) -> Result<Packet, Error> {
-        let len = self.stream.read_varint().await?;
-        let mut buf = vec![0; len as usize];
+        let len = self.stream.read_varint().await?.try_into()?;
+        let mut buf = vec![0; len];
         self.stream.read_exact(&mut buf).await?;
         let mut c = Cursor::new(buf);
 

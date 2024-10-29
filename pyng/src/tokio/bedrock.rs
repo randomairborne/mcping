@@ -1,5 +1,5 @@
-//! Implementation of the RakNet ping/pong protocol.
-//! https://wiki.vg/Raknet_Protocol#Unconnected_Ping
+//! Implementation of the `RakNet` ping/pong protocol.
+//! [RakNet Unconnected Ping](https://wiki.vg/Raknet_Protocol#Unconnected_Ping)
 
 use std::{
     io::{self, Cursor},
@@ -22,7 +22,7 @@ impl AsyncPingable for Bedrock {
     type Response = BedrockResponse;
 
     async fn ping(self) -> Result<(u64, Self::Response), Error> {
-        let mut connection =
+        let connection =
             Connection::new(&self.server_address, &self.socket_addresses, self.timeout).await?;
 
         for _ in 0..self.tries {
@@ -33,19 +33,19 @@ impl AsyncPingable for Bedrock {
             }
         }
 
-        let before = Instant::now();
         if let Packet::UnconnectedPong { payload, .. } = connection.read().await? {
-            let latency = (Instant::now() - before).as_millis() as u64;
+            let latency = Instant::now().elapsed().as_millis().try_into()?;
 
             // Attempt to extract useful information from the payload.
-            if let Some(response) = BedrockResponse::extract(&payload) {
-                Ok((latency, response))
-            } else {
-                Err(Error::IoError(io::Error::new(
-                    io::ErrorKind::Other,
-                    "Invalid Payload",
-                )))
-            }
+            BedrockResponse::extract(&payload).map_or_else(
+                || {
+                    Err(Error::IoError(io::Error::new(
+                        io::ErrorKind::Other,
+                        "Invalid Payload",
+                    )))
+                },
+                |response| Ok((latency, response)),
+            )
         } else {
             Err(Error::IoError(io::Error::new(
                 io::ErrorKind::Other,
@@ -55,11 +55,11 @@ impl AsyncPingable for Bedrock {
     }
 }
 
-/// Extension to `Read` and `ReadBytesExt` that supplies simple methods to write RakNet types.
+/// Extension to `Read` and `ReadBytesExt` that supplies simple methods to write `RakNet` types.
 trait AsyncReadBedrockExt: AsyncRead + AsyncReadExt + Unpin {
     /// Writes a Rust `String` in the form Raknet will respond to.
     ///
-    /// See more: https://wiki.vg/Raknet_Protocol#Data_types
+    /// See more: [RakNet Data Types](https://wiki.vg/Raknet_Protocol#Data_types)
     async fn read_string(&mut self) -> Result<String, io::Error> {
         let len = self.read_u16().await?;
         let mut buf = vec![0; len as usize];
@@ -115,7 +115,7 @@ impl Connection {
         })
     }
 
-    async fn send(&mut self, packet: Packet) -> Result<(), io::Error> {
+    async fn send(&self, packet: Packet) -> Result<(), io::Error> {
         match packet {
             Packet::UnconnectedPing => {
                 let mut buf = vec![0x01]; // Packet ID
@@ -125,7 +125,7 @@ impl Connection {
 
                 self.socket.send(&buf).await?;
             }
-            _ => {
+            Packet::UnconnectedPong { .. } => {
                 return Err(io::Error::new(
                     io::ErrorKind::Other,
                     "Invalid C -> S Packet",
@@ -136,7 +136,7 @@ impl Connection {
         Ok(())
     }
 
-    async fn read(&mut self) -> Result<Packet, io::Error> {
+    async fn read(&self) -> Result<Packet, io::Error> {
         let mut buf = vec![0; 1024];
         self.socket.recv(&mut buf).await?;
 

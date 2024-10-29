@@ -1,20 +1,19 @@
-//! Implementation of the RakNet ping/pong protocol.
-//! https://wiki.vg/Raknet_Protocol#Unconnected_Ping
+//! Implementation of the `RakNet` ping/pong protocol.
+//! [Raknet: Unconnected Ping](https://wiki.vg/Raknet_Protocol#Unconnected_Ping)
 
 use std::{
     net::{Ipv4Addr, SocketAddr},
     time::Duration,
 };
 
-/// Raknets default OFFLINE_MESSAGE_DATA_ID.
-///
-/// See more: https://wiki.vg/Raknet_Protocol#Data_types
-pub(crate) const OFFLINE_MESSAGE_DATA_ID: &[u8] = &[
+/// Raknets default `OFFLINE_MESSAGE_DATA_ID`.
+/// See more: [Raknet: Data Types](https://wiki.vg/Raknet_Protocol#Data_types)
+pub const OFFLINE_MESSAGE_DATA_ID: &[u8] = &[
     0x00, 0xff, 0xff, 0x00, 0xfe, 0xfe, 0xfe, 0xfe, 0xfd, 0xfd, 0xfd, 0xfd, 0x12, 0x34, 0x56, 0x78,
 ];
 
 /// The default port of a Raknet Bedrock Server.
-pub(crate) const DEFAULT_PORT: u16 = 19132;
+pub const DEFAULT_PORT: u16 = 19132;
 
 /// Configuration for pinging a Bedrock server.
 ///
@@ -88,9 +87,9 @@ pub enum BedrockEdition {
 impl std::fmt::Display for BedrockEdition {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            BedrockEdition::PocketEdition => f.write_str("MCPE"),
-            BedrockEdition::EducationEdition => f.write_str("MCEE"),
-            BedrockEdition::Other(s) => f.write_str(s),
+            Self::PocketEdition => f.write_str("MCPE"),
+            Self::EducationEdition => f.write_str("MCEE"),
+            Self::Other(s) => f.write_str(s),
         }
     }
 }
@@ -107,7 +106,7 @@ impl From<String> for BedrockEdition {
 
 /// Bedrock Server Payload Response
 ///
-/// See More: https://wiki.vg/Raknet_Protocol#Unconnected_Pong
+/// See More: [Raknet: Unconnected Pong](https://wiki.vg/Raknet_Protocol#Unconnected_Pong)
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub struct BedrockResponse {
     /// The server's edition.
@@ -163,9 +162,9 @@ impl BedrockResponse {
     /// Port (IPv4)
     /// Port (IPv6)
     pub(crate) fn extract(payload: &str) -> Option<Self> {
-        let mut parts = payload.split(';').map(|s| s.to_string());
+        let mut parts = payload.split(';').map(ToString::to_string);
 
-        Some(BedrockResponse {
+        Some(Self {
             edition: parts.next().map(BedrockEdition::from)?,
             motd_1: parts.next()?,
             protocol_version: parts.next().map(|s| s.parse().ok())?,
@@ -182,10 +181,10 @@ impl BedrockResponse {
     }
 }
 
-/// Represents a RakNet Unconnected Ping Protocol.
+/// Represents a `RakNet` Unconnected Ping Protocol.
 #[derive(Debug)]
 
-pub(crate) enum Packet {
+pub enum Packet {
     UnconnectedPing,
     UnconnectedPong {
         #[allow(dead_code)]
