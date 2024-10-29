@@ -11,7 +11,7 @@ use thiserror::Error;
 /// # Examples
 ///
 /// ```
-/// use mcping::Java;
+/// use pyng::Java;
 /// use std::time::Duration;
 ///
 /// let bedrock_config = Java {

@@ -21,7 +21,7 @@ pub(crate) const DEFAULT_PORT: u16 = 19132;
 /// # Examples
 ///
 /// ```
-/// use mcping::Bedrock;
+/// use pyng::Bedrock;
 /// use std::time::Duration;
 ///
 /// let bedrock_config = Bedrock {

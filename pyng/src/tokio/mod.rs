@@ -33,11 +33,11 @@ pub trait AsyncPingable {
 /// # async {
 /// use std::time::Duration;
 ///
-/// let (latency, response) = mcping::tokio::get_status(mcping::Java {
+/// let (latency, response) = pyng::tokio::get_status(pyng::Java {
 ///     server_address: "mc.hypixel.net".into(),
 ///     timeout: None,
 /// }).await?;
-/// # Ok::<(), mcping::Error>(())
+/// # Ok::<(), pyng::Error>(())
 /// # };
 /// ```
 ///
@@ -47,13 +47,13 @@ pub trait AsyncPingable {
 /// # async {
 /// use std::time::Duration;
 ///
-/// let (latency, response) = mcping::tokio::get_status(mcping::Bedrock {
+/// let (latency, response) = pyng::tokio::get_status(pyng::Bedrock {
 ///     server_address: "play.nethergames.org".into(),
 ///     timeout: None,
 ///     tries: 3,
 ///     ..Default::default()
 /// }).await?;
-/// # Ok::<(), mcping::Error>(())
+/// # Ok::<(), pyng::Error>(())
 /// # };
 /// ```
 pub async fn get_status<P: AsyncPingable>(pingable: P) -> Result<(u64, P::Response), Error> {
