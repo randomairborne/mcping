@@ -28,7 +28,7 @@ jobs:
         with:
           components: clippy
 
-      - name: Install NPM deps
+      - name: Run clippy
         run: cargo +nightly clippy --all -- -D warnings
 
   rust-fmt:
@@ -42,7 +42,7 @@ jobs:
         with:
           components: rustfmt
 
-      - name: Install NPM deps
+      - name: Format check
         run: cargo +nightly fmt --check --all
 
   js-fmt:
