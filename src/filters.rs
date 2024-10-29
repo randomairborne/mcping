@@ -14,7 +14,7 @@ pub struct Span<'a> {
     color: Option<&'a str>,
 }
 
-impl<'a> Display for Span<'a> {
+impl Display for Span<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         if self.content.is_empty() {
             return Ok(());
