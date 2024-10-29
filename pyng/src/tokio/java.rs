@@ -74,13 +74,22 @@ trait AsyncReadJavaExt: AsyncRead + AsyncReadExt + Unpin {
     }
 
     async fn read_string(&mut self) -> io::Result<String> {
-        let len: usize = self.read_varint().await?.try_into().map_err(|v| io::Error::new(io::ErrorKind::InvalidData, "Netty string length varint cannot be negative"))?;
+        let len: usize = self.read_varint().await?.try_into().map_err(|v| {
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Netty string length varint cannot be negative",
+            )
+        })?;
         if len == 0 {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, "Netty string length varint cannot be zero"))
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Netty string length varint cannot be zero",
+            ));
         }
         let mut buf = vec![0; len];
         self.read_exact(&mut buf).await?;
-        String::from_utf8(buf).map_err(|v| io::Error::new(io::ErrorKind::InvalidData, "Bad UTF-8 in Netty string"))
+        String::from_utf8(buf)
+            .map_err(|v| io::Error::new(io::ErrorKind::InvalidData, "Bad UTF-8 in Netty string"))
     }
 }
 
