@@ -127,6 +127,16 @@ pre > code {
 
 .ip {
   cursor: pointer;
+  margin: 2px;
+}
+
+details.ip[open] summary {
+  display: none;
+}
+
+.user-ip-stack {
+  display: flex;
+  align-items: center;
 }
 
 .root-api-status {
