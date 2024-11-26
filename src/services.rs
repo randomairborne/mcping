@@ -1,9 +1,11 @@
-use std::{sync::Arc, time::Duration};
+use std::{pin::pin, sync::Arc, time::Duration};
 
 use arc_swap::ArcSwap;
 use axum::extract::State;
+use futures_util::future::Either;
 use reqwest::Client;
-use tokio::{join, select};
+use tokio::join;
+use tokio_util::sync::CancellationToken;
 
 use crate::{
     structures::{
@@ -48,12 +50,16 @@ pub async fn get_mcstatus(http: Client) -> ServicesResponse {
 
 const MOJANG_API_REFRESH: Duration = Duration::from_secs(240);
 
-pub async fn refresh_mcstatus(http: Client, status: Arc<ArcSwap<ServicesResponse>>) {
+pub async fn refresh_mcstatus(
+    http: Client,
+    status: Arc<ArcSwap<ServicesResponse>>,
+    shutdown: CancellationToken,
+) {
     loop {
         let sleep = tokio::time::sleep(MOJANG_API_REFRESH);
-        select! {
-            () = sleep => {},
-            () = vss::shutdown_signal() => break,
+        match futures_util::future::select(pin!(sleep), pin!(shutdown.cancelled())).await {
+            Either::Left(_) => {}
+            Either::Right(_) => break,
         }
         let new_status = Arc::new(get_mcstatus(http.clone()).await);
         status.store(new_status);

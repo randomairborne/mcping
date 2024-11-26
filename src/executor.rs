@@ -1,7 +1,7 @@
-use std::time::Duration;
+use std::{pin::pin, time::Duration};
 
+use futures_util::future::Either;
 use pyng::{Bedrock, Java};
-use tokio::select;
 
 use crate::{
     structures::{ChatStatus, MCPingResponse, PlayerSample, Players, Version},
@@ -14,11 +14,11 @@ pub async fn ping_java(address: String) -> Result<MCPingResponse, Failure> {
         timeout: Some(Duration::from_secs(1)),
     });
     let sleep_future = tokio::time::sleep(Duration::from_secs(5));
-    #[allow(clippy::redundant_pub_crate)]
-    let (latency, response) = select! {
-        val = ping_future => val?,
-        () = sleep_future => return Err(Failure::TimedOut),
-    };
+    let (latency, response) =
+        match futures_util::future::select(pin!(ping_future), pin!(sleep_future)).await {
+            Either::Left(val) => val.0?,
+            Either::Right(_) => return Err(Failure::TimedOut),
+        };
     let mut player_sample: Vec<PlayerSample> = Vec::new();
     if let Some(sample) = response.players.sample {
         for player in sample {

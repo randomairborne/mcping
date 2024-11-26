@@ -33,6 +33,7 @@ use bustdir::BustDir;
 use reqwest::{header::HeaderMap, redirect::Policy, Client};
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
+use tokio_util::sync::CancellationToken;
 use tower::ServiceBuilder;
 use tower_http::{services::ServeDir, set_header::SetResponseHeaderLayer};
 use tower_sombrero::{
@@ -90,7 +91,12 @@ async fn main() {
         status = ?**current_mcstatus.load(),
         "Got mojang service status"
     );
-    let status_refresh = tokio::spawn(refresh_mcstatus(http_client, Arc::clone(&current_mcstatus)));
+    let shutdown_token = CancellationToken::new();
+    let status_refresh = tokio::spawn(refresh_mcstatus(
+        http_client,
+        Arc::clone(&current_mcstatus),
+        shutdown_token.clone(),
+    ));
 
     let state = AppState {
         svc_response: current_mcstatus,
@@ -162,10 +168,19 @@ async fn main() {
     let socket_address = SocketAddr::from((Ipv4Addr::UNSPECIFIED, port));
     let tcp = TcpListener::bind(socket_address).await.unwrap();
     info!(?socket_address, "Listening on socket");
-    axum::serve(tcp, router)
-        .with_graceful_shutdown(vss::shutdown_signal())
-        .await
-        .unwrap();
+    let server_shutdown_token = shutdown_token.clone();
+    let server_task = tokio::spawn(async move {
+        axum::serve(tcp, router)
+            .with_graceful_shutdown(server_shutdown_token.cancelled_owned())
+            .await
+            .unwrap();
+    });
+
+    vss::shutdown_signal().await;
+
+    shutdown_token.cancel();
+
+    server_task.await.expect("Server panicked");
     status_refresh.await.expect("Updater tasked panicked");
 }
 
