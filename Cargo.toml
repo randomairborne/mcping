@@ -11,7 +11,7 @@ axum = { version = "0.7", features = ["tokio", "http1", "http2", "query"], defau
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal"] }
 tracing-subscriber = { version = "0.3", features = ["json"] }
 futures-util = { version = "0.3", default-features = false }
-tower-sombrero = { version = "0.0.4", features = ["axum"] }
+tower-sombrero = { version = "0.0.5", features = ["axum"] }
 askama = { version = "0.12", features = ["with-axum"] }
 bustdir = { version = "0.1", features = ["askama"] }
 tokio-util = { version = "0.7", features = ["rt"] }
