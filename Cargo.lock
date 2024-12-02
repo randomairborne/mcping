@@ -2477,16 +2477,16 @@ checksum = "8df9b6e13f2d32c91b9bd719c00d1958837bc7dec474d94952798cc8e69eeec3"
 
 [[package]]
 name = "tower-sombrero"
-version = "0.0.4"
+version = "0.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63989c0a8beb8b167fc6f6c17b3d74924dcc028c56390c5723b1e8ed0b8e4357"
+checksum = "3375f3914ba7d6ff5d27f95262576ed65c7f346ef301d08751eeca96213e18e4"
 dependencies = [
  "async-trait",
  "axum-core",
  "futures-util",
  "http",
  "rand",
- "thiserror 1.0.69",
+ "thiserror 2.0.3",
  "tower-layer",
  "tower-service",
 ]
