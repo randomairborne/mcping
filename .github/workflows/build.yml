@@ -19,15 +19,17 @@ jobs:
 
   build:
     needs: [check]
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.platform.gha-image }}
     strategy:
       fail-fast: false
       matrix:
         platform:
           - docker: linux/amd64
-            llvm: x86_64
+            gha-image: ubuntu-24.04
+            slug: x86_64
           - docker: linux/arm64
-            llvm: aarch64
+            gha-image: ubuntu-24.04-arm
+            slug: aarch64
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -48,8 +50,6 @@ jobs:
         with:
           context: .
           platforms: ${{ matrix.platform.docker }}
-          build-args: |
-            LLVMTARGETARCH=${{ matrix.platform.llvm }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
 
       - name: Export digest
@@ -61,7 +61,7 @@ jobs:
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests-${{ matrix.platform.llvm }}
+          name: digests-${{ matrix.platform.slug }}
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
@@ -90,8 +90,9 @@ jobs:
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
-          docker buildx imagetools create --tag ${{ env.REGISTRY_IMAGE }}:latest --tag ${{ env.REGISTRY_IMAGE }}:git-${{ github.sha }} $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
+          docker buildx imagetools create --tag ${{ env.REGISTRY_IMAGE }}:latest $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
 
+          
   deploy:
     needs: [merge]
     runs-on: ubuntu-latest
