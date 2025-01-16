@@ -92,7 +92,6 @@ jobs:
         run: |
           docker buildx imagetools create --tag ${{ env.REGISTRY_IMAGE }}:latest $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
 
-          
   deploy:
     needs: [merge]
     runs-on: ubuntu-latest
