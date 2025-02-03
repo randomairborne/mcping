@@ -629,6 +629,6 @@ impl<T: rinja::Template> IntoResponse for HtmlTemplate<T> {
 
 impl<T: rinja::Template> From<T> for HtmlTemplate<T> {
     fn from(value: T) -> Self {
-        HtmlTemplate(value)
+        Self(value)
     }
 }
