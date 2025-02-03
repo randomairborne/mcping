@@ -171,7 +171,7 @@ mod tests {
         let span = Span::new(&class, None, "<script>alert(\"bad\");</script>");
         assert_eq!(
             span.to_string(),
-            "<span class=\"\">&lt;script&gt;alert(&quot;bad&quot;);&lt;/script&gt;</span>"
+            "<span class=\"\">&#60;script&#62;alert(&#34;bad&#34;);&#60;/script&#62;</span>"
         );
     }
     #[test]
