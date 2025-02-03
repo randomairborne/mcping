@@ -1,9 +1,8 @@
 use std::fmt::{Display, Formatter, Write};
 
-use askama::Html;
-use askama_escape::Escaper;
 #[allow(unused_imports)]
-pub use bustdir::askama::bust_dir;
+pub use bustdir::rinja::bust_dir;
+use rinja::filters::{Escaper as _, Html};
 
 const SECTION: char = '§';
 
@@ -30,7 +29,7 @@ impl Display for Span<'_> {
         }
         f.write_char('"')?;
         f.write_char('>')?;
-        Html.write_escaped(&mut *f, self.content)?;
+        Html.write_escaped_str(&mut *f, self.content)?;
         f.write_str("</span>")?;
         Ok(())
     }
@@ -46,7 +45,7 @@ impl<'a> Span<'a> {
     }
 }
 
-pub fn mojang_colorize<T: Display>(s: T) -> askama::Result<String> {
+pub fn mojang_colorize<T: Display>(s: T) -> rinja::Result<String> {
     let s = s.to_string();
     let mut output = String::new();
     let mut last_was_section = false;
@@ -97,7 +96,7 @@ pub fn mojang_colorize<T: Display>(s: T) -> askama::Result<String> {
 }
 
 #[allow(clippy::unnecessary_wraps)]
-pub fn api_color<T: Display>(s: T) -> askama::Result<&'static str> {
+pub fn api_color<T: Display>(s: T) -> rinja::Result<&'static str> {
     Ok(match s.to_string().as_str() {
         "Operational" => "green",
         "PossibleProblems" => "yellow",
@@ -107,7 +106,7 @@ pub fn api_color<T: Display>(s: T) -> askama::Result<&'static str> {
 }
 
 #[allow(clippy::unnecessary_wraps)]
-pub fn api_words<T: Display>(s: T) -> askama::Result<&'static str> {
+pub fn api_words<T: Display>(s: T) -> rinja::Result<&'static str> {
     Ok(match s.to_string().as_str() {
         "Operational" => "OK",
         "PossibleProblems" => "Flaky",

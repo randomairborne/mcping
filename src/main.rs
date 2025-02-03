@@ -5,6 +5,7 @@ mod services;
 mod structures;
 
 use std::{
+    convert::Infallible,
     net::{IpAddr, Ipv4Addr, SocketAddr},
     str::FromStr,
     sync::Arc,
@@ -12,7 +13,6 @@ use std::{
 };
 
 use arc_swap::ArcSwap;
-use askama::Template;
 use axum::{
     body::Body,
     extract::{FromRequestParts, Path, Query, Request, State},
@@ -23,7 +23,7 @@ use axum::{
         HeaderName, HeaderValue, StatusCode,
     },
     middleware::Next,
-    response::{IntoResponse, Redirect, Response},
+    response::{Html, IntoResponse, Redirect, Response},
     routing::get,
     Extension, Router,
 };
@@ -31,6 +31,7 @@ use axum_extra::routing::RouterExt;
 use base64::{prelude::BASE64_STANDARD, Engine};
 use bustdir::BustDir;
 use reqwest::{header::HeaderMap, redirect::Policy, Client};
+use rinja::Template;
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
 use tokio_util::sync::CancellationToken;
@@ -229,7 +230,7 @@ static ALLOW_CORS_NAME: HeaderName = HeaderName::from_static("access-control-all
 static ALLOW_CORS_VALUE: HeaderValue = HeaderValue::from_static("*");
 
 #[derive(Template)]
-#[template(path = "index.hbs", escape = "html", ext = "html")]
+#[template(path = "index.hbs", escape = "html")]
 pub struct RootTemplate {
     svc_status: ServicesResponse,
     root_url: Arc<str>,
@@ -237,7 +238,10 @@ pub struct RootTemplate {
     nonce: String,
 }
 
-async fn root(State(state): State<AppState>, CspNonce(nonce): CspNonce) -> RootTemplate {
+async fn root(
+    State(state): State<AppState>,
+    CspNonce(nonce): CspNonce,
+) -> HtmlTemplate<RootTemplate> {
     // create a copy of the services response
     let svc_status = **state.svc_response.load();
     RootTemplate {
@@ -246,22 +250,27 @@ async fn root(State(state): State<AppState>, CspNonce(nonce): CspNonce) -> RootT
         bd: state.bust_dir,
         nonce,
     }
+    .into()
 }
 
 #[derive(Template)]
-#[template(path = "api.hbs", escape = "html", ext = "html")]
+#[template(path = "api.hbs", escape = "html")]
 pub struct ApiTemplate {
     bd: Arc<BustDir>,
     root_url: Arc<str>,
     nonce: String,
 }
 
-async fn api_info(State(state): State<AppState>, CspNonce(nonce): CspNonce) -> ApiTemplate {
+async fn api_info(
+    State(state): State<AppState>,
+    CspNonce(nonce): CspNonce,
+) -> HtmlTemplate<ApiTemplate> {
     ApiTemplate {
         root_url: state.root_url,
         bd: state.bust_dir,
         nonce,
     }
+    .into()
 }
 
 #[derive(Deserialize)]
@@ -273,7 +282,7 @@ pub struct PingQuery {
 async fn ping_redirect(
     State(state): State<AppState>,
     Query(form): Query<PingQuery>,
-) -> Result<Redirect, ErrorTemplate> {
+) -> Result<Redirect, Infallible> {
     Ok(Redirect::to(&format!(
         "{}/ping/{}/{}",
         state.root_url, form.edition, form.address
@@ -281,7 +290,7 @@ async fn ping_redirect(
 }
 
 #[derive(Template)]
-#[template(path = "ping-page.hbs", escape = "html", ext = "html")]
+#[template(path = "ping-page.hbs", escape = "html")]
 pub struct PingPageTemplate {
     svc_status: ServicesResponse,
     root_url: Arc<str>,
@@ -295,7 +304,7 @@ async fn ping_page(
     State(state): State<AppState>,
     CspNonce(nonce): CspNonce,
     Path((edition, hostname)): Path<(String, String)>,
-) -> Result<PingPageTemplate, Failure> {
+) -> Result<HtmlTemplate<PingPageTemplate>, Failure> {
     match edition.as_str() {
         "java" | "bedrock" => {}
         _ => return Err(Failure::UnknownEdition),
@@ -307,7 +316,8 @@ async fn ping_page(
         hostname,
         edition,
         nonce,
-    })
+    }
+    .into())
 }
 
 async fn ping_generic(edition: &str, hostname: String) -> Result<MCPingResponse, Failure> {
@@ -320,7 +330,7 @@ async fn ping_generic(edition: &str, hostname: String) -> Result<MCPingResponse,
 }
 
 #[derive(Template)]
-#[template(path = "ping-frame.hbs", escape = "html", ext = "html")]
+#[template(path = "ping-frame.hbs", escape = "html")]
 pub struct PingFrameTemplate {
     ping: MCPingResponse,
     bd: Arc<BustDir>,
@@ -335,21 +345,21 @@ async fn ping_frame(
     CspNonce(nonce): CspNonce,
     Path((edition, hostname)): Path<(String, String)>,
     CfConnectingIp(ip): CfConnectingIp,
-) -> Result<PingFrameTemplate, Failure> {
+) -> Result<HtmlTemplate<PingFrameTemplate>, Failure> {
     info!(edition, path = "frame", target = hostname, on_behalf = ?ip, "Pinging server");
     let ping = ping_generic(&edition, hostname.clone()).await?;
-    Ok(PingFrameTemplate {
+    Ok(HtmlTemplate(PingFrameTemplate {
         ping,
         root_url: state.root_url,
         bd: state.bust_dir,
         edition,
         hostname,
         nonce,
-    })
+    }))
 }
 
 #[derive(Template)]
-#[template(path = "ping-element.hbs", escape = "html", ext = "html")]
+#[template(path = "ping-element.hbs", escape = "html")]
 pub struct PingElementTemplate {
     ping: MCPingResponse,
     bd: Arc<BustDir>,
@@ -362,7 +372,7 @@ async fn ping_markup(
     State(state): State<AppState>,
     Path((edition, hostname)): Path<(String, String)>,
     CfConnectingIp(ip): CfConnectingIp,
-) -> Result<PingElementTemplate, MarkupOnlyFailure> {
+) -> Result<HtmlTemplate<PingElementTemplate>, MarkupOnlyFailure> {
     info!(edition, path = "markup", target = hostname, on_behalf = ?ip, "Pinging server");
     let ping = ping_generic(&edition, hostname.clone()).await?;
     Ok(PingElementTemplate {
@@ -371,7 +381,8 @@ async fn ping_markup(
         root_url: state.root_url,
         edition,
         hostname,
-    })
+    }
+    .into())
 }
 
 async fn ping_image(
@@ -422,13 +433,17 @@ async fn no_address() -> Failure {
 }
 
 #[allow(clippy::unused_async)]
-async fn handle_404(State(state): State<AppState>, CspNonce(nonce): CspNonce) -> ErrorTemplate {
+async fn handle_404(
+    State(state): State<AppState>,
+    CspNonce(nonce): CspNonce,
+) -> HtmlTemplate<ErrorTemplate> {
     ErrorTemplate {
         error: "404 not found".to_owned(),
         bd: state.bust_dir,
         root_url: state.root_url,
         nonce,
     }
+    .into()
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -492,7 +507,7 @@ pub struct ErrorSerialization {
 }
 
 #[derive(Template)]
-#[template(path = "error.hbs", escape = "html", ext = "html")]
+#[template(path = "error.hbs", escape = "html")]
 pub struct ErrorTemplate {
     error: String,
     bd: Arc<BustDir>,
@@ -501,7 +516,7 @@ pub struct ErrorTemplate {
 }
 
 #[derive(Template)]
-#[template(path = "error-element.hbs", escape = "html", ext = "html")]
+#[template(path = "error-element.hbs", escape = "html")]
 pub struct ErrorElement {
     error: String,
 }
@@ -554,7 +569,7 @@ async fn error_middleware(
             (status, Json(infallible_json_serialize(&error))).into_response()
         } else if markup_only {
             let error = ErrorElement { error };
-            (status, error).into_response()
+            (status, HtmlTemplate(error)).into_response()
         } else {
             let error = ErrorTemplate {
                 error,
@@ -562,7 +577,7 @@ async fn error_middleware(
                 root_url: state.root_url,
                 nonce,
             };
-            (status, error).into_response()
+            (status, HtmlTemplate(error)).into_response()
         }
     } else {
         resp
@@ -581,8 +596,7 @@ impl IntoResponse for Png {
 
 pub struct CfConnectingIp(pub IpAddr);
 
-#[axum::async_trait]
-impl<S> FromRequestParts<S> for CfConnectingIp {
+impl<S: Sync> FromRequestParts<S> for CfConnectingIp {
     type Rejection = Failure;
 
     async fn from_request_parts(parts: &mut Parts, _: &S) -> Result<Self, Self::Rejection> {
@@ -596,5 +610,25 @@ impl<S> FromRequestParts<S> for CfConnectingIp {
         let ip_str = ip_hdr.to_str()?;
         let ip = IpAddr::from_str(ip_str)?;
         Ok(Self(ip))
+    }
+}
+
+pub struct HtmlTemplate<T>(pub T);
+
+impl<T: rinja::Template> IntoResponse for HtmlTemplate<T> {
+    fn into_response(self) -> Response {
+        match self.0.render() {
+            Ok(v) => Html(v).into_response(),
+            Err(e) => {
+                error!(source = ?e, "Could not template");
+                (StatusCode::INTERNAL_SERVER_ERROR, "Templating error").into_response()
+            }
+        }
+    }
+}
+
+impl<T: rinja::Template> From<T> for HtmlTemplate<T> {
+    fn from(value: T) -> Self {
+        HtmlTemplate(value)
     }
 }
