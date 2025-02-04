@@ -56,7 +56,6 @@ extern crate tracing;
 const DEFAULT_PORT: u16 = 8080;
 static JSON_CONTENT_TYPE: HeaderValue = HeaderValue::from_static("application/json;charset=utf-8");
 
-
 #[allow(clippy::too_many_lines)]
 #[tokio::main]
 async fn main() {
@@ -153,7 +152,10 @@ async fn main() {
         .route("/ping/redirect", get(ping_redirect).layer(cache_max))
         .route_with_tsr("/ping/{edition}/{hostname}", get(ping_page))
         .route("/internal/ping-frame/{edition}/{hostname}", get(ping_frame))
-        .route("/internal/ping-markup/{edition}/{hostname}", get(ping_markup))
+        .route(
+            "/internal/ping-markup/{edition}/{hostname}",
+            get(ping_markup),
+        )
         .route(
             "/internal/icon/{edition}/{hostname}/icon.{ext}",
             get(ping_image).layer(cache_medium),
