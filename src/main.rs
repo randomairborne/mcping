@@ -54,6 +54,8 @@ use crate::{
 extern crate tracing;
 
 const DEFAULT_PORT: u16 = 8080;
+static JSON_CONTENT_TYPE: HeaderValue = HeaderValue::from_static("application/json;charset=utf-8");
+
 
 #[allow(clippy::too_many_lines)]
 #[tokio::main]
@@ -70,7 +72,7 @@ async fn main() {
     let bust_dir = BustDir::new(&asset_dir).expect("Failed to build cache busting directory");
 
     let mut default_headers = HeaderMap::new();
-    default_headers.insert("Accept", "application/json".parse().unwrap());
+    default_headers.insert(ACCEPT, JSON_CONTENT_TYPE.clone());
 
     let user_agent = format!(
         "mcping.me/{} (https://github.com/randomairborne/mcping; {contact_email})",
@@ -133,9 +135,9 @@ async fn main() {
         .layer(cache_max.clone())
         .service(serve_dir_raw);
     let api = Router::new()
-        .route("/api/:address", get(handle_java_ping))
-        .route("/api/java/:address", get(handle_java_ping))
-        .route("/api/bedrock/:address", get(handle_bedrock_ping))
+        .route("/api/{address}", get(handle_java_ping))
+        .route("/api/java/{address}", get(handle_java_ping))
+        .route("/api/bedrock/{address}", get(handle_bedrock_ping))
         .route("/api/java/", get(no_address))
         .route("/api/bedrock/", get(no_address))
         .route("/api/services", get(services::handle_mcstatus))
@@ -149,11 +151,11 @@ async fn main() {
         .route("/", get(root))
         .route_with_tsr("/api/", get(api_info))
         .route("/ping/redirect", get(ping_redirect).layer(cache_max))
-        .route_with_tsr("/ping/:edition/:hostname", get(ping_page))
-        .route("/internal/ping-frame/:edition/:hostname", get(ping_frame))
-        .route("/internal/ping-markup/:edition/:hostname", get(ping_markup))
+        .route_with_tsr("/ping/{edition}/{hostname}", get(ping_page))
+        .route("/internal/ping-frame/{edition}/{hostname}", get(ping_frame))
+        .route("/internal/ping-markup/{edition}/{hostname}", get(ping_markup))
         .route(
-            "/internal/icon/:edition/:hostname/icon.:ext",
+            "/internal/icon/{edition}/{hostname}/icon.{ext}",
             get(ping_image).layer(cache_medium),
         )
         .fallback_service(serve_dir)
@@ -522,8 +524,6 @@ pub struct ErrorElement {
 }
 
 pub struct Json<T: Serialize>(pub T);
-
-static JSON_CONTENT_TYPE: HeaderValue = HeaderValue::from_static("application/json;charset=utf-8");
 
 fn infallible_json_serialize<T: Serialize>(data: &T) -> Vec<u8> {
     serde_json::to_vec_pretty(data).unwrap_or_else(|_| {
