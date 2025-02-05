@@ -23,5 +23,5 @@ COPY --from=client-builder /assets/ /var/www/mcping/
 
 ENV ASSET_DIR="/var/www/mcping/"
 
-HEALTHCHECK --interval=5s --timeout=5s --retries=5 CMD ["healthcheck", "http://localhost:8080"]
+HEALTHCHECK --interval=5s --timeout=5s --retries=5 CMD ["/usr/bin/mcping", "healthcheck", "http://127.0.0.1:8080"]
 ENTRYPOINT ["/usr/bin/mcping"]
