@@ -6,7 +6,7 @@ edition = "2021"
 
 [dependencies]
 reqwest = { version = "0.12", features = ["json", "trust-dns", "rustls-tls-webpki-roots"], default-features = false }
-tower-http = { version = "0.5", default-features = false, features = ["tracing", "fs", "set-header"] }
+tower-http = { version = "0.6", default-features = false, features = ["tracing", "fs", "set-header"] }
 axum = { version = "0.8", features = ["tokio", "http1", "http2", "query"], default-features = false }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal"] }
 tracing-subscriber = { version = "0.3", features = ["json"] }
@@ -23,7 +23,7 @@ thiserror = "2"
 tracing = "0.1"
 base64 = "0.22"
 arc-swap = "1"
-tower = "0.4"
+tower = "0.5"
 rinja = "0.3"
 vss = "0.1"
 
