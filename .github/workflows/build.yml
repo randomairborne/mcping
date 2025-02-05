@@ -108,7 +108,7 @@ jobs:
           - 8080:8080
     needs: merge
     steps:
-      - run: curl --fail http://mcping:8080/
+      - run: curl --fail http://localhost:8080/
 
   deploy:
     needs: [image-test]
