@@ -27,8 +27,7 @@ impl Display for Span<'_> {
             f.write_str(class)?;
             f.write_char(' ')?;
         }
-        f.write_char('"')?;
-        f.write_char('>')?;
+        f.write_str("\">")?;
         Html.write_escaped_str(&mut *f, self.content)?;
         f.write_str("</span>")?;
         Ok(())
