@@ -33,7 +33,7 @@
       let windowHash = window.location.hash.substring(1);
       let [actionString, edition, hostname] = windowHash.split(";", 3);
       if (actionString === "ping") {
-        if (edition.startsWith("b")) {
+        if (edition.startsWith("b") || edition.startsWith("p")) {
           window.location.pathname = `/ping/bedrock/${hostname}`;
         } else if (edition.startsWith("j")) {
           window.location.pathname = `/ping/java/${hostname}`;
