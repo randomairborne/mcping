@@ -8,7 +8,7 @@
     "prettier-check": "prettier . --check"
   },
   "devDependencies": {
-    "prettier": "^3.2.5",
+    "prettier": "^3.5.0",
     "prettier-plugin-jinja-template": "^1.3.3"
   }
 }
