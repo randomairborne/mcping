@@ -12,7 +12,7 @@ use tokio::{
     net::TcpStream,
 };
 
-use crate::{java::Packet, tokio::AsyncPingable, Error, Java, JavaResponse};
+use crate::{Error, Java, JavaResponse, java::Packet, tokio::AsyncPingable};
 
 impl AsyncPingable for Java {
     type Response = JavaResponse;

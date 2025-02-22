@@ -8,11 +8,11 @@ use tokio::join;
 use tokio_util::sync::CancellationToken;
 
 use crate::{
+    AppState, Json,
     structures::{
         MinecraftApiStatusEntry, MojangApiStatus, MojangSessionServerStatus, ServicesResponse,
         Status, XblStatusName, XblStatusResponse,
     },
-    AppState, Json,
 };
 
 const MOJANG_SESSIONSERVER_URL: &str =

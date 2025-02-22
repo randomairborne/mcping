@@ -14,23 +14,23 @@ use std::{
 
 use arc_swap::ArcSwap;
 use axum::{
+    Extension, Router,
     body::Body,
     extract::{FromRequestParts, Path, Query, Request, State},
     handler::Handler,
     http::{
+        HeaderName, HeaderValue, StatusCode,
         header::{ACCEPT, CACHE_CONTROL, CONTENT_TYPE},
         request::Parts,
-        HeaderName, HeaderValue, StatusCode,
     },
     middleware::Next,
     response::{Html, IntoResponse, Redirect, Response},
     routing::get,
-    Extension, Router,
 };
 use axum_extra::routing::RouterExt;
-use base64::{prelude::BASE64_STANDARD, Engine};
+use base64::{Engine, prelude::BASE64_STANDARD};
 use bustdir::BustDir;
-use reqwest::{header::HeaderMap, redirect::Policy, Client};
+use reqwest::{Client, header::HeaderMap, redirect::Policy};
 use rinja::Template;
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
@@ -38,9 +38,9 @@ use tokio_util::sync::CancellationToken;
 use tower::ServiceBuilder;
 use tower_http::{services::ServeDir, set_header::SetResponseHeaderLayer};
 use tower_sombrero::{
+    Sombrero,
     csp::CspNonce,
     headers::{ContentSecurityPolicy, CspSchemeSource, CspSource},
-    Sombrero,
 };
 use tracing::Level;
 

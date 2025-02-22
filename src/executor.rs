@@ -4,8 +4,8 @@ use futures_util::future::Either;
 use pyng::{Bedrock, Java};
 
 use crate::{
-    structures::{ChatStatus, MCPingResponse, PlayerSample, Players, Version},
     Failure,
+    structures::{ChatStatus, MCPingResponse, PlayerSample, Players, Version},
 };
 
 pub async fn ping_java(address: String) -> Result<MCPingResponse, Failure> {

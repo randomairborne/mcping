@@ -13,9 +13,9 @@ use tokio::{
 };
 
 use crate::{
-    bedrock::{Packet, DEFAULT_PORT, OFFLINE_MESSAGE_DATA_ID},
-    tokio::AsyncPingable,
     Bedrock, BedrockResponse, Error,
+    bedrock::{DEFAULT_PORT, OFFLINE_MESSAGE_DATA_ID, Packet},
+    tokio::AsyncPingable,
 };
 
 impl AsyncPingable for Bedrock {
@@ -129,7 +129,7 @@ impl Connection {
                 return Err(io::Error::new(
                     io::ErrorKind::Other,
                     "Invalid C -> S Packet",
-                ))
+                ));
             }
         }
 

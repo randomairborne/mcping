@@ -4,8 +4,8 @@ mod java;
 use std::sync::OnceLock;
 
 use hickory_resolver::{
-    config::{ResolverConfig, ResolverOpts},
     TokioAsyncResolver,
+    config::{ResolverConfig, ResolverOpts},
 };
 
 use crate::Error;
@@ -17,7 +17,7 @@ pub trait AsyncPingable {
 
     /// Ping the entity, gathering the latency and response.
     fn ping(self)
-        -> impl std::future::Future<Output = Result<(u64, Self::Response), Error>> + Send;
+    -> impl std::future::Future<Output = Result<(u64, Self::Response), Error>> + Send;
 }
 
 /// Retrieve the status of a given Minecraft server using a `AsyncPingable` configuration.
