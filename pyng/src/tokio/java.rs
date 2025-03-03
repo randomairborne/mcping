@@ -69,7 +69,7 @@ trait AsyncReadJavaExt: AsyncRead + AsyncReadExt + Unpin {
                 return Ok(res);
             }
         }
-        Err(io::Error::new(io::ErrorKind::Other, "VarInt too big!"))
+        Err(io::Error::other("VarInt too big!"))
     }
 
     async fn read_string(&mut self) -> io::Result<String> {
@@ -105,7 +105,7 @@ trait AsyncWriteJavaExt: AsyncWrite + AsyncWriteExt + Unpin {
             self.write_u8((val & 0x7F | 0x80) as u8).await?;
             val >>= 7;
         }
-        Err(io::Error::new(io::ErrorKind::Other, "VarInt too big!"))
+        Err(io::Error::other("VarInt too big!"))
     }
 
     async fn write_string(&mut self, s: &str) -> io::Result<()> {

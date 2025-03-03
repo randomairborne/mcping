@@ -38,19 +38,11 @@ impl AsyncPingable for Bedrock {
 
             // Attempt to extract useful information from the payload.
             BedrockResponse::extract(&payload).map_or_else(
-                || {
-                    Err(Error::IoError(io::Error::new(
-                        io::ErrorKind::Other,
-                        "Invalid Payload",
-                    )))
-                },
+                || Err(Error::IoError(io::Error::other("Invalid Payload"))),
                 |response| Ok((latency, response)),
             )
         } else {
-            Err(Error::IoError(io::Error::new(
-                io::ErrorKind::Other,
-                "Invalid Packet Response",
-            )))
+            Err(Error::IoError(io::Error::other("Invalid Packet Response")))
         }
     }
 }
@@ -64,8 +56,7 @@ trait AsyncReadBedrockExt: AsyncRead + AsyncReadExt + Unpin {
         let len = self.read_u16().await?;
         let mut buf = vec![0; len as usize];
         self.read_exact(&mut buf).await?;
-        String::from_utf8(buf)
-            .map_err(|_| io::Error::new(io::ErrorKind::Other, "Invalid UTF-8 String."))
+        String::from_utf8(buf).map_err(|_| io::Error::other("Invalid UTF-8 String."))
     }
 }
 
@@ -126,10 +117,7 @@ impl Connection {
                 self.socket.send(&buf).await?;
             }
             Packet::UnconnectedPong { .. } => {
-                return Err(io::Error::new(
-                    io::ErrorKind::Other,
-                    "Invalid C -> S Packet",
-                ));
+                return Err(io::Error::other("Invalid C -> S Packet"));
             }
         }
 
@@ -152,8 +140,7 @@ impl Connection {
                 buf.read_exact(&mut tmp).await?;
 
                 if tmp != OFFLINE_MESSAGE_DATA_ID {
-                    return Err(io::Error::new(
-                        io::ErrorKind::Other,
+                    return Err(io::Error::other(
                         "incorrect offline message data ID received",
                     ));
                 }
@@ -166,10 +153,7 @@ impl Connection {
                     payload,
                 })
             }
-            _ => Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Invalid S -> C Packet",
-            )),
+            _ => Err(io::Error::other("Invalid S -> C Packet")),
         }
     }
 }
