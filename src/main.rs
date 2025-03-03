@@ -59,9 +59,6 @@ static JSON_CONTENT_TYPE: HeaderValue = HeaderValue::from_static("application/js
 #[allow(clippy::too_many_lines)]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    if let Some(subcmd) = std::env::args().nth(1).as_deref() {
-        return check_health(subcmd).await;
-    }
     tracing_subscriber::fmt()
         .with_max_level(Level::TRACE)
         .json()
@@ -190,21 +187,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     server_task.await.expect("Server panicked");
     status_refresh.await.expect("Updater tasked panicked");
-    Ok(())
-}
-
-async fn check_health(subcmd: &str) -> Result<(), Box<dyn std::error::Error>> {
-    if subcmd != "healthcheck" {
-        return Err("The only valid subcommand is `healthcheck`".into());
-    }
-    let Some(url) = std::env::args().nth(2) else {
-        return Err("`healthcheck` requires exactly one argument.".into());
-    };
-    if std::env::args().len() != 3 {
-        return Err("`healthcheck` requires exactly one argument.".into());
-    }
-    reqwest::get(url).await?.error_for_status()?;
-    println!("Health check succeeded");
     Ok(())
 }
 
