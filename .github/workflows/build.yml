@@ -100,7 +100,7 @@ jobs:
         platform: [ubuntu-24.04, ubuntu-24.04-arm]
     services:
       mcping:
-        image: ${{ github.env.REGISTRY_IMAGE }}:git-${{ github.sha }}
+        image: ${{ env.REGISTRY_IMAGE }}:git-${{ github.sha }}
         env:
           CONTACT_EMAIL: valk+mcpingci@randomairborne.dev
           ROOT_URL: http://mcping:8080
