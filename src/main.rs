@@ -115,7 +115,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let noindex = SetResponseHeaderLayer::overriding(ROBOTS_NAME.clone(), ROBOTS_VALUE.clone());
     let shared_cors =
         SetResponseHeaderLayer::overriding(ALLOW_CORS_NAME.clone(), ALLOW_CORS_VALUE.clone());
-    let clacks = SetResponseHeaderLayer::overriding(CLACKS_NAME.clone(), CLACKS_VALUE.clone());
+    let clacks = SetResponseHeaderLayer::appending(CLACKS_NAME.clone(), CLACKS_VALUE.clone());
 
     let csp = get_csp();
     let sombrero = Sombrero::default().content_security_policy(csp);
