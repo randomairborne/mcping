@@ -157,7 +157,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             get(ping_markup),
         )
         .route(
-            "/internal/icon/{edition}/{hostname}/icon.{ext}",
+            "/internal/icon/{edition}/{hostname}/icon.png",
             get(ping_image).layer(cache_medium),
         )
         .fallback_service(serve_dir)
