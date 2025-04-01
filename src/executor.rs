@@ -1,15 +1,15 @@
 use std::{pin::pin, time::Duration};
 
 use futures_util::future::Either;
-use pyng::{Bedrock, Java};
+use pyng::{Bedrock, Java, tokio::Pinger};
 
 use crate::{
     Failure,
     structures::{ChatStatus, MCPingResponse, PlayerSample, Players, Version},
 };
 
-pub async fn ping_java(address: String) -> Result<MCPingResponse, Failure> {
-    let ping_future = pyng::tokio::get_status(Java {
+pub async fn ping_java(pinger: &Pinger, address: String) -> Result<MCPingResponse, Failure> {
+    let ping_future = pinger.ping(Java {
         server_address: address,
         timeout: Some(Duration::from_secs(1)),
     });
@@ -48,16 +48,17 @@ pub async fn ping_java(address: String) -> Result<MCPingResponse, Failure> {
     })
 }
 
-pub async fn ping_bedrock(address: String) -> Result<MCPingResponse, Failure> {
-    let (latency, response) = pyng::tokio::get_status(Bedrock {
-        server_address: address,
-        timeout: Some(Duration::from_secs(5)),
-        tries: 5,
-        wait_to_try: Some(Duration::from_millis(100)),
-        ..Default::default()
-    })
-    .await
-    .map_err(Failure::ConnectionFailed)?;
+pub async fn ping_bedrock(pinger: &Pinger, address: String) -> Result<MCPingResponse, Failure> {
+    let (latency, response) = pinger
+        .ping(Bedrock {
+            server_address: address,
+            timeout: Some(Duration::from_secs(5)),
+            tries: 5,
+            wait_to_try: Some(Duration::from_millis(100)),
+            ..Default::default()
+        })
+        .await
+        .map_err(Failure::ConnectionFailed)?;
     Ok(MCPingResponse {
         latency,
         players: Players {

@@ -12,13 +12,14 @@ use tokio::{
     net::TcpStream,
 };
 
+use super::Pinger;
 use crate::{Error, Java, JavaResponse, java::Packet, tokio::AsyncPingable};
 
 impl AsyncPingable for Java {
     type Response = JavaResponse;
 
-    async fn ping(self) -> Result<(u64, Self::Response), Error> {
-        let mut conn = Connection::new(&self.server_address, self.timeout).await?;
+    async fn ping(self, pinger: &Pinger) -> Result<(u64, Self::Response), Error> {
+        let mut conn = Connection::new(&self.server_address, self.timeout, pinger).await?;
 
         // Handshake
         conn.send_packet(Packet::Handshake {
@@ -130,7 +131,7 @@ struct Connection {
 }
 
 impl Connection {
-    async fn new(address: &str, timeout: Option<Duration>) -> Result<Self, Error> {
+    async fn new(address: &str, timeout: Option<Duration>, pinger: &Pinger) -> Result<Self, Error> {
         // Split the address up into it's parts, saving the host and port for later and converting the
         // potential domain into an ip
         let mut parts = address.split(':');
@@ -145,9 +146,6 @@ impl Connection {
             25565
         };
 
-        // Attempt to lookup the ip of the server from an srv record, falling back on the ip from a host
-        let resolver = super::resolver();
-
         // Determine what host to lookup by doing the following:
         // - Lookup the SRV record for the domain, if it exists perform a lookup of the ip from the target
         //   and grab the port pointed at by the record.
@@ -158,7 +156,8 @@ impl Connection {
         // - If the above failed in any way fall back to the normal ip lookup from the host provided
         //   and use the provided port.
 
-        let srv_lookup = resolver
+        let srv_lookup = pinger
+            .resolver
             .srv_lookup(format!("_minecraft._tcp.{}.", &host))
             .await
             .ok();
@@ -166,7 +165,8 @@ impl Connection {
             Some(lookup) => match lookup.into_iter().next() {
                 Some(record) => {
                     port = record.port();
-                    resolver
+                    pinger
+                        .resolver
                         .lookup_ip(record.target().to_string())
                         .await
                         .ok()
@@ -174,7 +174,8 @@ impl Connection {
                 }
                 None => None,
             },
-            None => resolver
+            None => pinger
+                .resolver
                 .lookup_ip(host.clone())
                 .await
                 .ok()

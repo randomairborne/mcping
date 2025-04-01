@@ -12,6 +12,7 @@ use tokio::{
     net::UdpSocket,
 };
 
+use super::Pinger;
 use crate::{
     Bedrock, BedrockResponse, Error,
     bedrock::{DEFAULT_PORT, OFFLINE_MESSAGE_DATA_ID, Packet},
@@ -21,9 +22,14 @@ use crate::{
 impl AsyncPingable for Bedrock {
     type Response = BedrockResponse;
 
-    async fn ping(self) -> Result<(u64, Self::Response), Error> {
-        let connection =
-            Connection::new(&self.server_address, &self.socket_addresses, self.timeout).await?;
+    async fn ping(self, pinger: &Pinger) -> Result<(u64, Self::Response), Error> {
+        let connection = Connection::new(
+            &self.server_address,
+            &self.socket_addresses,
+            self.timeout,
+            pinger,
+        )
+        .await?;
 
         for _ in 0..self.tries {
             connection.send(Packet::UnconnectedPing).await?;
@@ -72,6 +78,7 @@ impl Connection {
         address: &str,
         socket_addresses: &[SocketAddr],
         timeout: Option<Duration>,
+        pinger: &Pinger,
     ) -> Result<Self, Error> {
         let mut parts = address.split(':');
 
@@ -83,10 +90,8 @@ impl Connection {
             DEFAULT_PORT
         };
 
-        // Do a hostname lookup
-        let resolver = super::resolver();
-
-        let ip = resolver
+        let ip = pinger
+            .resolver
             .lookup_ip(host.as_str())
             .await
             .ok()

@@ -31,6 +31,7 @@ use axum::{
 use axum_extra::routing::RouterExt;
 use base64::{Engine, prelude::BASE64_STANDARD};
 use bustdir::BustDir;
+use pyng::tokio::Pinger;
 use reqwest::{Client, header::HeaderMap, redirect::Policy};
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
@@ -100,10 +101,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         shutdown_token.clone(),
     ));
 
+    let pinger = Arc::new(Pinger::default());
+
     let state = AppState {
         svc_response: current_mcstatus,
         root_url: root_url.into(),
         bust_dir: bust_dir.into(),
+        pinger,
     };
 
     let cache_none =
@@ -218,6 +222,7 @@ pub struct AppState {
     svc_response: Arc<ArcSwap<ServicesResponse>>,
     root_url: Arc<str>,
     bust_dir: Arc<BustDir>,
+    pinger: Arc<Pinger>,
 }
 
 static ROBOTS_NAME: HeaderName = HeaderName::from_static("x-robots-tag");
@@ -325,10 +330,14 @@ async fn ping_page(
     .into())
 }
 
-async fn ping_generic(edition: &str, hostname: String) -> Result<MCPingResponse, Failure> {
+async fn ping_generic(
+    pinger: &Pinger,
+    edition: &str,
+    hostname: String,
+) -> Result<MCPingResponse, Failure> {
     let ping = match edition {
-        "java" => ping_java(hostname).await?,
-        "bedrock" => ping_bedrock(hostname).await?,
+        "java" => ping_java(pinger, hostname).await?,
+        "bedrock" => ping_bedrock(pinger, hostname).await?,
         _ => return Err(Failure::UnknownEdition),
     };
     Ok(ping)
@@ -352,7 +361,7 @@ async fn ping_frame(
     CfConnectingIp(ip): CfConnectingIp,
 ) -> Result<HtmlTemplate<PingFrameTemplate>, Failure> {
     info!(edition, path = "frame", target = hostname, on_behalf = ?ip, "Pinging server");
-    let ping = ping_generic(&edition, hostname.clone()).await?;
+    let ping = ping_generic(&state.pinger, &edition, hostname.clone()).await?;
     Ok(HtmlTemplate(PingFrameTemplate {
         ping,
         root_url: state.root_url,
@@ -379,7 +388,7 @@ async fn ping_markup(
     CfConnectingIp(ip): CfConnectingIp,
 ) -> Result<HtmlTemplate<PingElementTemplate>, MarkupOnlyFailure> {
     info!(edition, path = "markup", target = hostname, on_behalf = ?ip, "Pinging server");
-    let ping = ping_generic(&edition, hostname.clone()).await?;
+    let ping = ping_generic(&state.pinger, &edition, hostname.clone()).await?;
     Ok(PingElementTemplate {
         ping,
         bd: state.bust_dir,
@@ -393,10 +402,11 @@ async fn ping_markup(
 async fn ping_image(
     Path((edition, hostname)): Path<(String, String)>,
     CfConnectingIp(ip): CfConnectingIp,
+    State(state): State<AppState>,
 ) -> Result<Png, StatusCode> {
     const PREFIX_LEN: usize = "data:image/png;base64,".len();
     info!(edition, path = "image", target = hostname, on_behalf = ?ip, "Pinging server");
-    let ping = match ping_generic(&edition, hostname.clone()).await {
+    let ping = match ping_generic(&state.pinger, &edition, hostname.clone()).await {
         Ok(v) => v,
         Err(e) => {
             error!(error = ?e, "Encountered error decoding icon");
@@ -420,17 +430,19 @@ async fn ping_image(
 async fn handle_java_ping(
     Path(address): Path<String>,
     CfConnectingIp(ip): CfConnectingIp,
+    State(state): State<AppState>,
 ) -> Result<Json<MCPingResponse>, Failure> {
     info!(edition = "java", path = "api", target = address, on_behalf = ?ip, "Pinging server");
-    Ok(Json(ping_java(address).await?))
+    Ok(Json(ping_java(&state.pinger, address).await?))
 }
 
 async fn handle_bedrock_ping(
     Path(address): Path<String>,
     CfConnectingIp(ip): CfConnectingIp,
+    State(state): State<AppState>,
 ) -> Result<Json<MCPingResponse>, Failure> {
     info!(edition = "bedrock", path = "api", target = address, on_behalf = ?ip, "Pinging server");
-    Ok(Json(ping_bedrock(address).await?))
+    Ok(Json(ping_bedrock(&state.pinger, address).await?))
 }
 
 async fn no_address() -> Failure {
