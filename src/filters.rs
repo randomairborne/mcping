@@ -1,8 +1,8 @@
 use std::fmt::{Display, Formatter, Write};
 
+use askama::filters::{Escaper as _, Html};
 #[allow(unused_imports)]
 pub use bustdir::askama::bust_dir;
-use askama::filters::{Escaper as _, Html};
 
 const SECTION: char = '§';
 

@@ -13,6 +13,7 @@ use std::{
 };
 
 use arc_swap::ArcSwap;
+use askama::Template;
 use axum::{
     Extension, Router,
     body::Body,
@@ -31,7 +32,6 @@ use axum_extra::routing::RouterExt;
 use base64::{Engine, prelude::BASE64_STANDARD};
 use bustdir::BustDir;
 use reqwest::{Client, header::HeaderMap, redirect::Policy};
-use askama::Template;
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
 use tokio_util::sync::CancellationToken;
