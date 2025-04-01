@@ -1,8 +1,8 @@
 use std::fmt::{Display, Formatter, Write};
 
 #[allow(unused_imports)]
-pub use bustdir::rinja::bust_dir;
-use rinja::filters::{Escaper as _, Html};
+pub use bustdir::askama::bust_dir;
+use askama::filters::{Escaper as _, Html};
 
 const SECTION: char = '§';
 
@@ -44,7 +44,7 @@ impl<'a> Span<'a> {
     }
 }
 
-pub fn mojang_colorize<T: Display>(s: T) -> rinja::Result<String> {
+pub fn mojang_colorize<T: Display>(s: T) -> askama::Result<String> {
     let s = s.to_string();
     let mut output = String::new();
     let mut last_was_section = false;
@@ -95,7 +95,7 @@ pub fn mojang_colorize<T: Display>(s: T) -> rinja::Result<String> {
 }
 
 #[allow(clippy::unnecessary_wraps)]
-pub fn api_color<T: Display>(s: T) -> rinja::Result<&'static str> {
+pub fn api_color<T: Display>(s: T) -> askama::Result<&'static str> {
     Ok(match s.to_string().as_str() {
         "Operational" => "green",
         "PossibleProblems" => "yellow",
@@ -105,7 +105,7 @@ pub fn api_color<T: Display>(s: T) -> rinja::Result<&'static str> {
 }
 
 #[allow(clippy::unnecessary_wraps)]
-pub fn api_words<T: Display>(s: T) -> rinja::Result<&'static str> {
+pub fn api_words<T: Display>(s: T) -> askama::Result<&'static str> {
     Ok(match s.to_string().as_str() {
         "Operational" => "OK",
         "PossibleProblems" => "Flaky",

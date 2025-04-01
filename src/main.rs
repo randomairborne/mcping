@@ -31,7 +31,7 @@ use axum_extra::routing::RouterExt;
 use base64::{Engine, prelude::BASE64_STANDARD};
 use bustdir::BustDir;
 use reqwest::{Client, header::HeaderMap, redirect::Policy};
-use rinja::Template;
+use askama::Template;
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
 use tokio_util::sync::CancellationToken;
@@ -618,7 +618,7 @@ impl<S: Sync> FromRequestParts<S> for CfConnectingIp {
 
 pub struct HtmlTemplate<T>(pub T);
 
-impl<T: rinja::Template> IntoResponse for HtmlTemplate<T> {
+impl<T: askama::Template> IntoResponse for HtmlTemplate<T> {
     fn into_response(self) -> Response {
         match self.0.render() {
             Ok(v) => Html(v).into_response(),
@@ -630,7 +630,7 @@ impl<T: rinja::Template> IntoResponse for HtmlTemplate<T> {
     }
 }
 
-impl<T: rinja::Template> From<T> for HtmlTemplate<T> {
+impl<T: askama::Template> From<T> for HtmlTemplate<T> {
     fn from(value: T) -> Self {
         Self(value)
     }
