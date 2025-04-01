@@ -24,7 +24,7 @@ tracing = "0.1"
 base64 = "0.22"
 arc-swap = "1"
 tower = "0.5"
-rinja = "0.3"
+rinja = "0.4"
 vss = "0.1"
 
 [workspace]
