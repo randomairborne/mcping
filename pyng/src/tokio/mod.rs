@@ -30,6 +30,10 @@ impl Pinger {
         Self::default()
     }
 
+    /// Ping a server
+    ///
+    /// # Errors
+    /// When a server cannot be connected to
     pub async fn ping<P: AsyncPingable + Send>(
         &self,
         ping: P,
