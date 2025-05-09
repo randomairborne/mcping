@@ -44,7 +44,7 @@ impl<'a> Span<'a> {
     }
 }
 
-pub fn mojang_colorize<T: Display>(s: T) -> askama::Result<String> {
+pub fn mojang_colorize<T: Display>(s: T, _: &dyn askama::Values) -> askama::Result<String> {
     let s = s.to_string();
     let mut output = String::new();
     let mut last_was_section = false;
@@ -95,7 +95,7 @@ pub fn mojang_colorize<T: Display>(s: T) -> askama::Result<String> {
 }
 
 #[allow(clippy::unnecessary_wraps)]
-pub fn api_color<T: Display>(s: T) -> askama::Result<&'static str> {
+pub fn api_color<T: Display>(s: T, _: &dyn askama::Values) -> askama::Result<&'static str> {
     Ok(match s.to_string().as_str() {
         "Operational" => "green",
         "PossibleProblems" => "yellow",
@@ -105,7 +105,7 @@ pub fn api_color<T: Display>(s: T) -> askama::Result<&'static str> {
 }
 
 #[allow(clippy::unnecessary_wraps)]
-pub fn api_words<T: Display>(s: T) -> askama::Result<&'static str> {
+pub fn api_words<T: Display>(s: T, _: &dyn askama::Values) -> askama::Result<&'static str> {
     Ok(match s.to_string().as_str() {
         "Operational" => "OK",
         "PossibleProblems" => "Flaky",
@@ -116,20 +116,23 @@ pub fn api_words<T: Display>(s: T) -> askama::Result<&'static str> {
 
 #[cfg(test)]
 mod tests {
+
+    use askama::NO_VALUES;
+
     use super::*;
     #[test]
     fn test_api_words() {
-        assert_eq!(api_words("Operational").unwrap(), "OK");
-        assert_eq!(api_words("PossibleProblems").unwrap(), "Flaky");
-        assert_eq!(api_words("DefiniteProblems").unwrap(), "Down");
-        assert_eq!(api_words("operational").unwrap(), "Unknown");
+        assert_eq!(api_words("Operational", NO_VALUES).unwrap(), "OK");
+        assert_eq!(api_words("PossibleProblems", NO_VALUES).unwrap(), "Flaky");
+        assert_eq!(api_words("DefiniteProblems", NO_VALUES).unwrap(), "Down");
+        assert_eq!(api_words("operational", NO_VALUES).unwrap(), "Unknown");
     }
     #[test]
     fn test_api_colors() {
-        assert_eq!(api_color("Operational").unwrap(), "green");
-        assert_eq!(api_color("PossibleProblems").unwrap(), "yellow");
-        assert_eq!(api_color("DefiniteProblems").unwrap(), "red");
-        assert_eq!(api_color("operational").unwrap(), "blue");
+        assert_eq!(api_color("Operational", NO_VALUES).unwrap(), "green");
+        assert_eq!(api_color("PossibleProblems", NO_VALUES).unwrap(), "yellow");
+        assert_eq!(api_color("DefiniteProblems", NO_VALUES).unwrap(), "red");
+        assert_eq!(api_color("operational", NO_VALUES).unwrap(), "blue");
     }
     #[test]
     fn test_span_no_color() {
@@ -177,7 +180,7 @@ mod tests {
     fn test_colorize_none() {
         let input = "No color codes";
         assert_eq!(
-            mojang_colorize(input).unwrap(),
+            mojang_colorize(input, NO_VALUES).unwrap(),
             "<span class=\"\">No color codes</span>"
         );
     }
@@ -185,7 +188,7 @@ mod tests {
     fn test_colorize_one_color() {
         let input = "§acolor a";
         assert_eq!(
-            mojang_colorize(input).unwrap(),
+            mojang_colorize(input, NO_VALUES).unwrap(),
             "<span class=\"motd-style-a \">color a</span>"
         );
     }
@@ -193,7 +196,7 @@ mod tests {
     fn test_colorize_color_immediate_change() {
         let input = "§a§bcolor b";
         assert_eq!(
-            mojang_colorize(input).unwrap(),
+            mojang_colorize(input, NO_VALUES).unwrap(),
             "<span class=\"motd-style-b \">color b</span>"
         );
     }
@@ -201,7 +204,7 @@ mod tests {
     fn test_colorize_color_reset() {
         let input = "§acolor a§rblank§bcolor b";
         assert_eq!(
-            mojang_colorize(input).unwrap(),
+            mojang_colorize(input, NO_VALUES).unwrap(),
             r#"<span class="motd-style-a ">color a</span><span class="">blank</span><span class="motd-style-b ">color b</span>"#
         );
     }
@@ -209,7 +212,7 @@ mod tests {
     fn test_colorize_additive() {
         let input = "§a§nunderlined";
         assert_eq!(
-            mojang_colorize(input).unwrap(),
+            mojang_colorize(input, NO_VALUES).unwrap(),
             r#"<span class="motd-style-a motd-style-n ">underlined</span>"#
         );
     }

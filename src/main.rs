@@ -55,7 +55,7 @@ use crate::{
 extern crate tracing;
 
 const DEFAULT_PORT: u16 = 8080;
-static JSON_CONTENT_TYPE: HeaderValue = HeaderValue::from_static("application/json;charset=utf-8");
+static JSON_CONTENT_TYPE: HeaderValue = HeaderValue::from_static("application/json");
 
 #[allow(clippy::too_many_lines)]
 #[tokio::main]
