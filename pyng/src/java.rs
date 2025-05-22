@@ -127,7 +127,7 @@ pub enum Chat {
 
 impl Chat {
     #[must_use]
-    pub fn text(&self) -> &str {
+    pub const fn text(&self) -> &str {
         match self {
             Self::Text { text } => text.as_str(),
             Self::String(s) => s.as_str(),
