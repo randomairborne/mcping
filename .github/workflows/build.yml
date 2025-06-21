@@ -189,7 +189,7 @@ jobs:
         run: ./ci/signify.sh *.deb
 
       - name: Publish
-        run: aws s3 sync apt-repo/mcping/ s3://apt-repo/mcping/
+        run: aws s3 sync apt-repo/mcping/ s3://apt-repos/mcping/
         env:
           AWS_ENDPOINT_URL: https://${{ secrets.S3_ACCOUNT_ID }}.r2.cloudflarestorage.com/
           AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
