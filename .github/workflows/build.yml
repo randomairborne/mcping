@@ -186,14 +186,8 @@ jobs:
           pattern: deb-*
           merge-multiple: true
 
-      - name: Save GPG private key
-        run: echo ${{ secrets.GPG_PRIVATE_KEY }} > private.gpg
-
       - name: Import private keys
-        run: gpg --import private.gpg
-
-      - name: Delete GPG private key
-        run: rm private.gpg
+        run: echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import
 
       - name: Sign and prepare apt repo
         run: ./ci/signify.sh
