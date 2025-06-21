@@ -193,4 +193,4 @@ jobs:
         run: ./ci/signify.sh *.deb
 
       - name: Publish
-        run: s3cmd sync --recursive apt-repo/mcping/ s3://apt-repo/mcping/
+        run: s3cmd put --recursive apt-repo/mcping/ s3://apt-repo/mcping/
