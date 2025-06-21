@@ -4,7 +4,7 @@ set -e
 mkdir -p apt-repo/mcping/pool/main/
 
 cd apt-repo/mcping/
-mv *.deb pool/main/
+mv "$@" pool/main/
 
 for arch in "amd64" "arm64";
 do

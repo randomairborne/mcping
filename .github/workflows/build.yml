@@ -186,14 +186,11 @@ jobs:
           pattern: deb-*
           merge-multiple: true
 
-      - name: List test
-        run: ls -R
-
       - name: Import private keys
         run: echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import
 
       - name: Sign and prepare apt repo
-        run: ./ci/signify.sh
+        run: ./ci/signify.sh *.deb
 
       - name: Publish
         run: s3cmd sync --recursive apt-repo/mcping/ s3://apt-repo/mcping/
