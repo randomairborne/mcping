@@ -173,12 +173,8 @@ jobs:
       - name: Install apt dependencies
         run: sudo apt-get install dpkg-dev gpg
 
-      - name: Set up S3cmd
-        uses: s3-actions/s3cmd@v2.0.0
-        with:
-          provider: cloudflare
-          access_key: ${{ secrets.S3_ACCESS_KEY }}
-          secret_key: ${{ secrets.S3_SECRET_KEY }}
+      - name: Install s3 CLI
+        run: sudo snap install aws-cli --classic
 
       - name: Download debfiles
         uses: actions/download-artifact@v4
@@ -193,4 +189,8 @@ jobs:
         run: ./ci/signify.sh *.deb
 
       - name: Publish
-        run: s3cmd put --recursive apt-repo/mcping/ s3://apt-repo/mcping/
+        run: aws s3 sync apt-repo/mcping/ s3://apt-repo/mcping/
+        env:
+          AWS_ENDPOINT_URL: https://${{ secrets.S3_ACCOUNT_ID }}.r2.cloudflarestorage.com/
+          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
