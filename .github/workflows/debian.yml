@@ -1,4 +1,4 @@
-name: Build container
+name: Build debian packages
 
 on:
   push:
@@ -13,7 +13,7 @@ jobs:
   check:
     uses: ./.github/workflows/check.yml
 
-  build:
+  build-debs:
     needs: [check]
     runs-on: ${{ matrix.platform.gha-image }}
     strategy:
@@ -54,7 +54,7 @@ jobs:
           name: deb-${{ matrix.platform.slug }}
           path: target/deb/*
 
-  publish:
+  publish-debs:
     needs: [build]
     runs-on: ubuntu-latest
     steps:
