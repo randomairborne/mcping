@@ -8,7 +8,7 @@ cd apt-repo/mcping/
 
 for arch in "amd64" "arm64";
 do
-mkdir -p apt-repo/mcping/dists/stable/main/binary-$arch;
+mkdir -p dists/stable/main/binary-$arch;
 dpkg-scanpackages --arch $arch pool/ > dists/stable/main/binary-$arch/Packages
 cat dists/stable/main/binary-$arch/Packages | gzip -9 > dists/stable/main/binary-$arch/Packages.gz
 done
