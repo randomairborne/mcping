@@ -141,7 +141,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install apt dependencies
-        run: sudo apt-get install jq
+        run: sudo apt-get install jq dpkg-dev
 
       - name: Prepare cache
         uses: Swatinem/rust-cache@v2
@@ -171,7 +171,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install apt dependencies
-        run: sudo apt-get install dpkg-scanpackages gpg
+        run: sudo apt-get install dpkg-dev gpg
 
       - name: Set up S3cmd
         uses: s3-actions/s3cmd@v2.0.0
