@@ -186,6 +186,9 @@ jobs:
           pattern: deb-*
           merge-multiple: true
 
+      - name: List test
+        run: ls -R
+
       - name: Import private keys
         run: echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import
 
