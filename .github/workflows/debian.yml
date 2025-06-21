@@ -55,7 +55,7 @@ jobs:
           path: target/deb/*
 
   publish-debs:
-    needs: [build]
+    needs: [build-debs]
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
