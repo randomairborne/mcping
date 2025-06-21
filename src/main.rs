@@ -64,7 +64,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_max_level(Level::TRACE)
         .json()
         .init();
-    let asset_dir = std::env::var("ASSET_DIR").unwrap_or_else(|_| "./assets/".to_owned());
+    let asset_dir = std::env::var("ASSET_DIR").unwrap_or_else(|_| "assets".to_owned());
     let root_url = valk_utils::get_var("ROOT_URL");
     let root_url = root_url.trim_end_matches('/').to_owned();
     let port: u16 = valk_utils::parse_var_or("PORT", DEFAULT_PORT);
