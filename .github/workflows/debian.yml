@@ -1,0 +1,93 @@
+name: Build container
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    uses: ./.github/workflows/check.yml
+
+  build:
+    needs: [check]
+    runs-on: ${{ matrix.platform.gha-image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - slug: amd64
+            gha-image: ubuntu-24.04
+          - slug: arm64
+            gha-image: ubuntu-24.04-arm
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Install cargo
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install apt dependencies
+        run: apt install jq
+
+      - name: Prepare cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.platform.slug }}
+
+      - name: Build binary
+        run: cargo b --release
+
+      - name: Generate deb templates
+        run: ci/debpkg.sh ${{ matrix.platform.slug }}
+
+      - name: Package debfiles
+        run: dpkg --build target/deb/*; done
+
+      - name: Upload debfile
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-${{ matrix.platform.slug }}
+          path: target/deb/*
+
+  publish:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Install apt dependencies
+        run: apt install dpkg-scanpackages gpg
+
+      - name: Set up S3cmd
+        uses: s3-actions/s3cmd@v2.0.0
+        with:
+          provider: cloudflare
+          access_key: ${{ secrets.S3_ACCESS_KEY }}
+          secret_key: ${{ secrets.S3_SECRET_KEY }}
+
+      - name: Download debfiles
+        uses: actions/download-artifact@v4
+        with:
+          pattern: deb-*
+          merge-multiple: true
+
+      - name: Save GPG private key
+        run: echo ${{ secrets.GPG_PRIVATE_KEY }} > private.gpg
+
+      - name: Import private keys
+        run: gpg --import private.gpg
+
+      - name: Delete GPG private key
+        run: rm private.gpg
+
+      - name: Sign and prepare apt repo
+        run: ./ci/signify.sh
+
+      - name: Publish
+        run: s3cmd sync --recursive apt-repo/mcping/ s3://apt-repo/mcping/
