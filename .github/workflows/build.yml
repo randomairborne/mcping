@@ -110,18 +110,6 @@ jobs:
     steps:
       - run: curl --fail http://localhost:8080/
 
-  deploy-docker:
-    needs: [image-test]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions-hub/kubectl@master
-        env:
-          KUBE_HOST: ${{ secrets.KUBE_HOST }}
-          KUBE_CERTIFICATE: ${{ secrets.KUBE_CERTIFICATE }}
-          KUBE_TOKEN: ${{ secrets.KUBE_TOKEN }}
-        with:
-          args: -n mcping set image deployment/mcping mcping=${{ env.REGISTRY_IMAGE }}:git-${{ github.sha }}
-
   build-debs:
     needs: [check]
     runs-on: ${{ matrix.platform.gha-image }}
