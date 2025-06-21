@@ -2,7 +2,7 @@
 set -e
 
 mkdir -p apt-repo/mcping/pool/main/
-mv "$@" pool/main/
+mv "$@" apt-repo/mcping/pool/main/
 
 cd apt-repo/mcping/
 
