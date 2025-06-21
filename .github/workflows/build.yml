@@ -155,13 +155,13 @@ jobs:
         run: ci/debpkg.sh ${{ matrix.platform.slug }}
 
       - name: Package debfiles
-        run: dpkg --build target/deb/*; done
+        run: dpkg --build target/deb/*
 
       - name: Upload debfile
         uses: actions/upload-artifact@v4
         with:
           name: deb-${{ matrix.platform.slug }}
-          path: target/deb/*
+          path: target/deb/*.deb
 
   publish-debs:
     needs: [build-debs]
