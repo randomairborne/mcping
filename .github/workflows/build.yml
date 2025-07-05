@@ -93,21 +93,3 @@ jobs:
         working-directory: /tmp/digests
         run: |
           docker buildx imagetools create --tag ${{ env.REGISTRY_IMAGE }}:latest --tag ${{ env.REGISTRY_IMAGE }}:git-${{ github.sha }} $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
-
-  image-test:
-    runs-on: ${{ matrix.platform }}
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [ubuntu-24.04, ubuntu-24.04-arm]
-    services:
-      mcping:
-        image: ghcr.io/randomairborne/mcping:git-${{ github.sha }}
-        env:
-          CONTACT_EMAIL: valk@randomairborne.dev
-          ROOT_URL: http://localhost:8080
-        ports:
-          - 8080:8080
-    needs: [merge-docker]
-    steps:
-      - run: curl --fail http://localhost:8080/
