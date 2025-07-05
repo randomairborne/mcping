@@ -11,7 +11,7 @@ FROM chef AS planner
 COPY . .
 RUN cargo chef prepare --recipe-path recipe.json
 
-FROM chef AS builder
+FROM chef AS server-builder
 COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
@@ -20,7 +20,7 @@ RUN cargo build --release
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app
 
-COPY --from=builder /app/target/release/mcping /usr/local/bin
+COPY --from=server-builder /app/target/release/mcping /usr/local/bin
 COPY --from=server-builder /app/target/release/mcping-healthcheck /usr/local/bin/mcping-healthcheck
 COPY --from=client-builder /assets/ /var/www/mcping/
 
