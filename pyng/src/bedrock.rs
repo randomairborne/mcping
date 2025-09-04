@@ -67,9 +67,9 @@ impl Default for Bedrock {
             tries: 5,
             wait_to_try: Some(Duration::from_millis(10)),
             socket_addresses: vec![
-                SocketAddr::from((Ipv4Addr::new(0, 0, 0, 0), 25567)),
-                SocketAddr::from((Ipv4Addr::new(0, 0, 0, 0), 25568)),
-                SocketAddr::from((Ipv4Addr::new(0, 0, 0, 0), 25569)),
+                SocketAddr::from((Ipv4Addr::UNSPECIFIED, 25567)),
+                SocketAddr::from((Ipv4Addr::UNSPECIFIED, 25568)),
+                SocketAddr::from((Ipv4Addr::UNSPECIFIED, 25569)),
             ],
         }
     }

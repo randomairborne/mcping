@@ -4,7 +4,6 @@
 use std::time::Duration;
 
 use serde::Deserialize;
-use thiserror::Error;
 
 /// Configuration for pinging a Java server.
 ///
@@ -133,12 +132,6 @@ impl Chat {
             Self::String(s) => s.as_str(),
         }
     }
-}
-
-#[derive(Debug, Error)]
-#[error("invalid packet response `{packet:?}`")]
-pub struct InvalidPacket {
-    packet: Packet,
 }
 
 #[derive(Debug)]
