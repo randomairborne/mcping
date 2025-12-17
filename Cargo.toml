@@ -13,12 +13,12 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal"] }
 tracing-subscriber = { version = "0.3", features = ["json"] }
 futures-util = { version = "0.3", default-features = false }
 tower-sombrero = { version = "0.1", features = ["axum"] }
+axum-extra = { version = "0.12", features = ["routing"] }
 bustdir = { version = "0.3", features = ["askama"] }
 tokio-util = { version = "0.7", features = ["rt"] }
 serde = { version = "1", features = ["derive"] }
 pyng = { path = "pyng" }
 valk-utils = "0.1"
-axum-extra = { version = "0.12", features = ["routing"] }
 serde_json = "1"
 thiserror = "2"
 tracing = "0.1"
