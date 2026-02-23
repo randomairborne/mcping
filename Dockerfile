@@ -20,7 +20,7 @@ RUN cargo build --release
 FROM debian:trixie-slim AS runtime
 
 RUN apt-get update
-RUN apt-get install curl
+RUN apt-get install curl -y
 
 COPY --from=server-builder /app/target/release/mcping /usr/local/bin
 COPY --from=client-builder /assets/ /var/www/mcping/
