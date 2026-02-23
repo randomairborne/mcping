@@ -393,9 +393,9 @@ checksum = "5d20789868f4b01b2f2caec9f5c4e0213b41e3e5702a50157d699ae31ced2fcb"
 
 [[package]]
 name = "bustdir"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "65f2e266c23b67382c8c89015f6d2b20828a6703a5ca47b087cf23ee3384a434"
+checksum = "6bb3e48e981e04b87e7ab2ea1cd859b4f0dd21c137df489e21760032d2772b18"
 dependencies = [
  "ahash",
  "askama",
