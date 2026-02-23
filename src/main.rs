@@ -240,7 +240,7 @@ static ALLOW_CORS_NAME: HeaderName = HeaderName::from_static("access-control-all
 static ALLOW_CORS_VALUE: HeaderValue = HeaderValue::from_static("*");
 
 #[derive(Template)]
-#[template(path = "index.hbs", escape = "html")]
+#[template(path = "index.hbs", escape = "html", blocks = ["description"])]
 pub struct RootTemplate {
     svc_status: ServicesResponse,
     root_url: Arc<str>,
@@ -264,7 +264,7 @@ async fn root(
 }
 
 #[derive(Template)]
-#[template(path = "api.hbs", escape = "html")]
+#[template(path = "api.hbs", escape = "html", blocks = ["description"])]
 pub struct ApiTemplate {
     bd: Arc<BustDir>,
     root_url: Arc<str>,
@@ -300,7 +300,7 @@ async fn ping_redirect(
 }
 
 #[derive(Template)]
-#[template(path = "ping-page.hbs", escape = "html")]
+#[template(path = "ping-page.hbs", escape = "html", blocks = ["description"])]
 pub struct PingPageTemplate {
     svc_status: ServicesResponse,
     root_url: Arc<str>,
@@ -344,7 +344,7 @@ async fn ping_generic(
 }
 
 #[derive(Template)]
-#[template(path = "ping-frame.hbs", escape = "html")]
+#[template(path = "ping-frame.hbs", escape = "html", blocks = ["description"])]
 pub struct PingFrameTemplate {
     ping: MCPingResponse,
     bd: Arc<BustDir>,
@@ -524,7 +524,7 @@ pub struct ErrorSerialization {
 }
 
 #[derive(Template)]
-#[template(path = "error.hbs", escape = "html")]
+#[template(path = "error.hbs", escape = "html", blocks = ["description"])]
 pub struct ErrorTemplate {
     error: String,
     bd: Arc<BustDir>,

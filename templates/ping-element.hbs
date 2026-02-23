@@ -1,4 +1,4 @@
-{% let icon %}
+{% create icon %}
 {% match ping.icon %}
   {% when Some with (raw_icon) %}
   {% let icon = "{}/internal/icon/{}/{}/icon.png"|format(root_url, edition, hostname) %}
