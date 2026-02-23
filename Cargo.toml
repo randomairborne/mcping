@@ -14,7 +14,7 @@ tracing-subscriber = { version = "0.3", features = ["json"] }
 futures-util = { version = "0.3", default-features = false }
 tower-sombrero = { version = "0.1", features = ["axum"] }
 axum-extra = { version = "0.12", features = ["routing"] }
-bustdir = { version = "0.3", features = ["askama"] }
+bustdir = { version = "0.4", features = ["askama"] }
 tokio-util = { version = "0.7", features = ["rt"] }
 serde = { version = "1", features = ["derive"] }
 pyng = { path = "pyng" }
@@ -23,7 +23,7 @@ serde_json = "1"
 thiserror = "2"
 tracing = "0.1"
 base64 = "0.22"
-askama = "0.14"
+askama = "0.15"
 arc-swap = "1"
 tower = "0.5"
 vss = "0.1"
